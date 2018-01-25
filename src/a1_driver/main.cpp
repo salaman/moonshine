@@ -10,47 +10,47 @@ using namespace nfa;
 
 int main()
 {
-    std::cout << "Hello, World!" << std::endl;
+    // build an nfa to accept language
+    NFA idToken = NFA(Atom::letter()) & NFA(Atom::alphanum()).kleene();
 
-    //TokenBuilder builder = TokenBuilder::define(1)
-    //        .with([](int& test) {
-    //            test = 10;
-    //        });
+    NFA integerToken = (NFA(Atom::nonzero()) & NFA(Atom::digit()).kleene())
+                       | NFA('0');
 
-    // build an nfa to accept abc
-    //NFA nfa = (NFA(Atom::ch('a')) & NFA(Atom::ch('b')) & NFA(Atom::ch('c')))
-    //          | (NFA(Atom::ch('c')) & NFA(Atom::ch('b')) & NFA(Atom::ch('a')))
-    //          | (NFA(Atom::digit()) & NFA(Atom::ch('b')) & NFA(Atom::nonzero()));
+    NFA fractionAtom = (NFA('.') & NFA(Atom::digit()).kleene() & NFA(Atom::nonzero()))
+                       | (NFA('.') & NFA('0'));
 
-    NFA nfa = NFA(Atom::ch('a')) & NFA(Atom::ch('b')) & NFA(Atom::ch('c'));
+    NFA floatToken = integerToken & fractionAtom;
+
+    NFA equalsToken = NFA('=') & NFA('=');
+    NFA andToken = NFA::str("and");
+    NFA notToken = NFA::str("not");
+
+    NFA nfa = idToken
+              | integerToken
+              | floatToken
+              | equalsToken
+              | notToken;
 
     // convert nfa to dfa
     dfa::DFA dfa = nfa.powerset();
 
     // simulate various test strings
     std::vector<std::string> tests = {
-        //"a",
-        //"ab",
-        //"abc",
-        //"abcd",
-        "abcc",
-        //"abd",
-        //"",
-        //"c",
-        //"cb",
-        //"cba",
-        //"ba",
-        //"ca",
-        //"0",
-        //"0b",
-        //"1b",
-        //"0b1",
-        //"0b9",
-        //"0b0",
-        //"1b0",
-        //"0c1",
-        //"1b11",
-        //"1b1b",
+        "",
+        "abc",
+        "ab_c",
+        "0abc",
+        "0",
+        "1",
+        "123",
+        "123.",
+        "123.0",
+        "=",
+        "==",
+        "a",
+        "an",
+        "and",
+        "not",
     };
 
     for (const auto& s : tests) {

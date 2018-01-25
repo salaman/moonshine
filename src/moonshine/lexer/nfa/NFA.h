@@ -19,6 +19,8 @@ class NFA
 public:
     NFA();
     explicit NFA(const Atom& atom);
+    explicit NFA(const char& character);
+    static NFA str(const char* string);
 
     NFA kleene();
     dfa::DFA powerset();
@@ -26,7 +28,7 @@ public:
     template<typename Iter>
     std::set<size_t> epsilonClosure(Iter begin, Iter end);
     template<typename Iter>
-    std::vector<size_t> move(Iter begin, Iter end, const char& symbol);
+    std::set<size_t> move(Iter begin, Iter end, const char& symbol);
     bool isFinal(const size_t& index) const;
 
     NFA operator&(const NFA& rhs) const;

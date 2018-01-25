@@ -22,11 +22,47 @@ NFA::NFA(const Atom& atom)
     alphabet_.insert(atom.characters().begin(), atom.characters().end());
 }
 
+NFA::NFA(const char& character)
+    : NFA(Atom::ch(character))
+{
+}
+
+NFA NFA::str(const char* string)
+{
+    NFA temp;
+
+    for (int i = 0; string[i] != '\0'; ++i) {
+        temp = temp & NFA(string[i]);
+    }
+
+    return temp;
+}
+
 NFA NFA::kleene()
 {
     NFA temp(*this);
 
-    // TODO
+    // insert new starting state
+    temp.states_.emplace_back();
+    auto newStartIndex = temp.states_.size() - 1;
+
+    // insert new final state
+    temp.states_.emplace_back();
+    auto newFinalIndex = temp.states_.size() - 1;
+
+    // add epsilon transitions from our new start state to prior final state and new final state
+    temp.transitions_.emplace(newStartIndex, std::make_pair(Atom::epsilon(), temp.start_));
+    temp.transitions_.emplace(newStartIndex, std::make_pair(Atom::epsilon(), newFinalIndex));
+
+    // add epsilon transitions from prior final states to prior start state and new final state
+    for (const auto& s : temp.final_) {
+        temp.transitions_.emplace(s, std::make_pair(Atom::epsilon(), temp.start_));
+        temp.transitions_.emplace(s, std::make_pair(Atom::epsilon(), newFinalIndex));
+    }
+
+    // set new start and final states
+    temp.start_ = newStartIndex;
+    temp.final_ = {newFinalIndex};
 
     return temp;
 }
@@ -39,10 +75,19 @@ dfa::DFA NFA::powerset()
     std::vector<size_t> unmarkedStates;
 
     // add e-closure(S0) to Sdfa as the start state
-    std::set<size_t> start {start_};
+    std::set<size_t> start{start_};
     std::set<size_t> startEpsilonClosure = epsilonClosure(start.cbegin(), start.cend());
 
-    unmarkedStates.emplace_back(temp.addState(startEpsilonClosure));
+    auto startState = temp.addState(startEpsilonClosure);
+    unmarkedStates.emplace_back(startState);
+
+    // mark start as final if required
+    for (const auto& s: temp.getState(startState)) {
+        if (isFinal(s)) {
+            temp.markFinal(startState);
+            break;
+        }
+    }
 
     // while Sdfa contains unmarked states
     while (!unmarkedStates.empty()) {
@@ -78,46 +123,6 @@ dfa::DFA NFA::powerset()
     return temp;
 }
 
-//dfa::DFA NFA::powerset()
-//{
-//    dfa::DFA temp(states_);
-//
-//    // Sdfa = {}
-//    std::forward_list<std::set<size_t>> states;
-//    std::vector<std::reference_wrapper<std::set<size_t>>> unmarkedStates;
-//
-//    // add e-closure(S0) to Sdfa as the start state
-//    std::set<size_t> start {start_};
-//    std::set<size_t> startEpsilonClosure = epsilonClosure(start.cbegin(), start.cend());
-//
-//    states.push_front(startEpsilonClosure);
-//    unmarkedStates.emplace_back(*states.begin());
-//
-//    // while Sdfa contains unmarked states
-//    while (!unmarkedStates.empty()) {
-//        std::set<size_t> T = unmarkedStates.back();
-//        unmarkedStates.pop_back();
-//
-//        // for each a in alphabet
-//        for (const auto& a : alphabet_) {
-//            auto moves = move(T.cbegin(), T.cend(), a);
-//            auto S = epsilonClosure(moves.cbegin(), moves.cend());
-//
-//            // if S is not in Sdfa
-//            if (std::find(states.cbegin(), states.cend(), S) != states.cend()) {
-//                // add S to Sdfa as unmarked
-//                states.push_front(S);
-//                unmarkedStates.emplace_back(*states.begin());
-//            }
-//
-//            // set MoveDFA(T, a) to S
-//            temp.addTransition(T, S, a);
-//        }
-//    }
-//
-//    return temp;
-//}
-
 NFA NFA::operator&(const NFA& rhs) const
 {
     NFA temp(*this);
@@ -136,16 +141,16 @@ NFA NFA::operator&(const NFA& rhs) const
         temp.transitions_.emplace(p.first + reindex, std::make_pair(p.second.first, p.second.second + reindex));
     }
 
-    if (temp.final_.size() != 1 || rhs.final_.size() != 1) {
-        // TODO
-        throw std::runtime_error("TODO NFA with mult final states");
+    // add epsilon transitions from 1st NFA final states to 2nd NFA start state
+    for (const auto& s : temp.final_) {
+        temp.transitions_.emplace(s, std::make_pair(Atom::epsilon(), rhs.start_ + reindex));
     }
 
-    // add epsilon transition from 1st NFA final state to 2nd NFA start state
-    temp.transitions_.emplace(*temp.final_.begin(), std::make_pair(Atom::epsilon(), rhs.start_ + reindex));
-
-    // set new final state to 2nd NFA's final state
-    temp.final_ = {*rhs.final_.begin() + reindex};
+    // set new final states to 2nd NFA's final states
+    temp.final_ = {};
+    for (const auto& s : rhs.final_) {
+        temp.final_.emplace(s + reindex);
+    }
 
     return temp;
 }
@@ -179,8 +184,10 @@ NFA NFA::operator|(const NFA& rhs) const
     // set the new start state
     temp.start_ = newStartIndex;
 
-    // add the 2nd NFA's final state
-    temp.final_.emplace(*rhs.final_.cbegin() + reindex);
+    // merge in the 2nd NFA's final states
+    for (const auto& s : rhs.final_) {
+        temp.final_.emplace(s + reindex);
+    }
 
     return temp;
 }
@@ -214,16 +221,16 @@ std::set<size_t> NFA::epsilonClosure(Iter begin, Iter end)
 }
 
 template<typename Iter>
-std::vector<size_t> NFA::move(Iter begin, Iter end, const char& character)
+std::set<size_t> NFA::move(Iter begin, Iter end, const char& character)
 {
-    std::vector<size_t> reachableStates;
+    std::set<size_t> reachableStates;
 
     while (begin != end) {
         auto outTransitions = transitions_.equal_range(*begin);
 
         for (auto t = outTransitions.first; t != outTransitions.second; ++t) {
             if (t->second.first.matches(character)) {
-                reachableStates.push_back(t->second.second);
+                reachableStates.emplace(t->second.second);
             }
         }
 

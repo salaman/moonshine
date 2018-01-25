@@ -54,11 +54,22 @@ Atom Atom::alphanum()
     return Atom::letter() + Atom::digit() + Atom::ch('_');
 }
 
-Atom Atom::ch(char character)
+Atom Atom::ch(const char& character)
 {
     Atom temp;
 
     temp.characters_.insert(character);
+
+    return temp;
+}
+
+Atom Atom::str(const char* string)
+{
+    Atom temp;
+
+    for (int i = 0; string[i] != '\0'; ++i) {
+        temp += Atom::ch(string[i]);
+    }
 
     return temp;
 }
@@ -70,7 +81,7 @@ bool Atom::matches() const
 
 bool Atom::matches(char character) const
 {
-    return matches() || characters_.find(character) != characters_.end();
+    return characters_.find(character) != characters_.end();
 }
 
 const std::set<char>& Atom::characters() const
@@ -80,9 +91,16 @@ const std::set<char>& Atom::characters() const
 
 Atom Atom::operator+(const Atom& rhs)
 {
-    Atom temp;
+    Atom temp(*this);
 
     temp.characters_.insert(rhs.characters_.cbegin(), rhs.characters_.cend());
 
     return temp;
+}
+
+Atom& Atom::operator+=(const Atom& rhs)
+{
+    characters_.insert(rhs.characters_.cbegin(), rhs.characters_.cend());
+
+    return *this;
 }

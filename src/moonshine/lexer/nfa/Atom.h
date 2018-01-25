@@ -10,7 +10,8 @@ public:
     static Atom digit();
     static Atom nonzero();
     static Atom alphanum();
-    static Atom ch(char character);
+    static Atom ch(const char& character);
+    static Atom str(const char* character);
 
     Atom();
 
@@ -19,6 +20,7 @@ public:
     const std::set<char>& characters() const;
 
     Atom operator+(const Atom& rhs);
+    Atom& operator+=(const Atom& rhs);
 private:
     std::set<char> characters_;
 };
