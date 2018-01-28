@@ -9,13 +9,12 @@ Atom::Atom()
 
 Atom Atom::epsilon()
 {
-    return Atom();
+    static Atom A;
+    return A;
 }
 
 Atom Atom::letter()
 {
-    // TODO: return cached copies
-
     Atom temp;
 
     for (char c = 'a'; c <= 'z'; ++c) {
@@ -53,7 +52,14 @@ Atom Atom::nonzero()
 
 Atom Atom::alphanum()
 {
-    return Atom::letter() + Atom::digit() + Atom::ch('_');
+    static Atom a = Atom::letter() + Atom::digit() + Atom::ch('_');
+    return a;
+}
+
+Atom Atom::ws()
+{
+    static Atom a = Atom::str(" \n\r\t\b\v\f");
+    return a;
 }
 
 Atom Atom::ch(const char& character)

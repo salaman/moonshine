@@ -7,64 +7,43 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <cstring>
 
-//using namespace moonshine;
+using namespace moonshine;
 
-int main()
+int main(int argc, const char** argv)
 {
+    bool atocc = false;
+
+    if (argc > 1 && strcmp(argv[1], "atocc") == 0) {
+        atocc = true;
+    }
+
     moonshine::Lexer lex;
 
-    std::istringstream stream("__abc ; 1.2000");
-    //std::istringstream stream("abc");
+    //std::istringstream stream("___abc1 _= 3;");
+    //lex.startLexing(&stream);
 
-    //std::cout << stream.tellg() << std::endl;
-    //std::cout << (char) stream.get() << std::endl;
-    //std::cout << stream.tellg() << std::endl;
-    //std::cout << (char) stream.get() << std::endl;
-    //std::cout << stream.tellg() << std::endl;
-    //std::cout << (char) stream.get() << std::endl;
-    //std::cout << stream.tellg() << std::endl;
-    //std::cout << (char) stream.get() << std::endl;
-    //std::cout << stream.eof() << std::endl;
-
-    lex.startLexing(&stream);
+    lex.startLexing(&std::cin);
 
     moonshine::Token* token = nullptr;
 
     while ((token = lex.getNextToken()) != nullptr) {
-        std::cout << token->name() << " \"" << token->value << "\" " << token->position << std::endl;
+        if (atocc) {
+            std::cout << token->name() << ' ';
+        } else {
+            std::cout << token->name() << " \"" << token->value << "\" " << token->position << std::endl;
+        }
 
         delete token;
     }
 
-    //// simulate various test strings
-    //std::vector<std::string> tests = {
-    //    "",
-    //    "abc",
-    //    "ab_c",
-    //    "0abc",
-    //    "0",
-    //    "1",
-    //    "123",
-    //    "123.",
-    //    "123.0",
-    //    "=",
-    //    "==",
-    //    "a",
-    //    "an",
-    //    "and",
-    //    "not",
-    //};
-    //
-    //for (const auto& s : tests) {
-    //    dfa::DFASimulator simulator(dfa);
-    //
-    //    std::for_each(s.cbegin(), s.cend(), [&simulator](const char& c) {
-    //        simulator.move(c);
-    //    });
-    //
-    //    std::cout << s << ": " << (simulator.accepted() ? simulator.token() : "n/a") << std::endl;
-    //}
+    if (!atocc) {
+        std::cout << std::endl << "Errors:" << std::endl;
+        for (const auto& e : lex.getErrors()) {
+            std::cout << "invalid characters: \"" << e.value << "\" @ " << e.position << std::endl;
+        }
+    }
 
     return 0;
 }

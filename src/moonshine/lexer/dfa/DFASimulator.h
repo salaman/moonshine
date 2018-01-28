@@ -11,6 +11,7 @@ class DFASimulator
 {
 public:
     explicit DFASimulator(const DFA& dfa);
+    bool hasMove(const char& character);
     void move(const char& character);
     bool accepted() const;
     bool halted() const;

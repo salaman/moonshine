@@ -25,6 +25,8 @@ public:
     static NFA str(const char* string);
 
     NFA kleene();
+    NFA optional();
+
     dfa::DFA powerset();
 
     template<typename Iter>
@@ -32,7 +34,7 @@ public:
     template<typename Iter>
     std::set<size_t> move(Iter begin, Iter end, const char& symbol);
     bool isFinal(const size_t& index) const;
-    NFA& attachToken(const TokenType& token);
+    NFA& token(const TokenType& token);
 
     NFA operator&(const NFA& rhs) const;
     NFA operator|(const NFA& rhs) const;

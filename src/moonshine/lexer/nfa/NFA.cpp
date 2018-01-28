@@ -67,6 +67,28 @@ NFA NFA::kleene()
     return temp;
 }
 
+NFA NFA::optional()
+{
+    NFA temp(*this);
+
+    // insert new final state
+    temp.states_.emplace_back();
+    auto newFinalIndex = temp.states_.size() - 1;
+
+    // add epsilon transitions from start state to new final state
+    temp.transitions_.emplace(temp.start_, std::make_pair(Atom::epsilon(), newFinalIndex));
+
+    // add epsilon transitions from prior final states to new final state
+    for (const auto& s : temp.final_) {
+        temp.transitions_.emplace(s, std::make_pair(Atom::epsilon(), newFinalIndex));
+    }
+
+    // set new start and final states
+    temp.final_ = {newFinalIndex};
+
+    return temp;
+}
+
 dfa::DFA NFA::powerset()
 {
     dfa::DFA temp(states_);
@@ -249,7 +271,7 @@ bool NFA::isFinal(const size_t& index) const
     return final_.find(index) != final_.end();
 }
 
-NFA& NFA::attachToken(const TokenType& token)
+NFA& NFA::token(const TokenType& token)
 {
     for (const auto& s : final_) {
         states_[s].setToken(token);

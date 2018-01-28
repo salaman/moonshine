@@ -1,6 +1,7 @@
 #include "Lexer.h"
 
 #include "moonshine/lexer/nfa/NFA.h"
+#include "moonshine/lexer/nfa/Atom.h"
 
 #include <string>
 #include <iostream>
@@ -13,7 +14,12 @@ Lexer::Lexer()
 {
     using namespace nfa;
 
-    // build an nfa to accept language
+    /*
+     * NFA language definition
+     */
+
+    NFA ws = NFA(Atom::ws()).optional();
+
     NFA idToken = NFA(Atom::letter()) & NFA(Atom::alphanum()).kleene();
 
     NFA integerToken = (NFA(Atom::nonzero()) & NFA(Atom::digit()).kleene())
@@ -22,53 +28,69 @@ Lexer::Lexer()
     NFA fractionAtom = (NFA('.') & NFA(Atom::digit()).kleene() & NFA(Atom::nonzero()))
                        | NFA::str(".0");
 
-    NFA floatToken = integerToken & fractionAtom;
+    NFA exponentAtom = NFA('e') & (NFA('+') | NFA('-')) & integerToken;
 
-    NFA equalsToken = NFA::str("==");
-    NFA andToken = NFA::str("and");
-    NFA notToken = NFA::str("not");
-    NFA semicolonToken = NFA(';');
+    NFA floatToken = integerToken & fractionAtom & exponentAtom.optional();
 
-    NFA nfa = andToken.attachToken(TokenType::T_AND)
-              | notToken.attachToken(TokenType::T_NOT)
-              | idToken.attachToken(TokenType::T_IDENTIFIER)
-              | integerToken.attachToken(TokenType::T_INTEGER_LITERAL)
-              | floatToken.attachToken(TokenType::T_FLOAT_LITERAL)
-              | equalsToken.attachToken(TokenType::T_EQUAL)
-              | semicolonToken.attachToken(TokenType::T_SEMICOLON);
+    NFA nfa = (
+        // comparison operators
+        NFA::str("==").token(TokenType::T_IS_EQUAL)
+        | NFA::str("<>").token(TokenType::T_IS_NOT_EQUAL)
+        | NFA::str("<=").token(TokenType::T_IS_SMALLER_OR_EQUAL)
+        | NFA('<').token(TokenType::T_IS_SMALLER)
+        | NFA::str(">=").token(TokenType::T_IS_GREATER_OR_EQUAL)
+        | NFA('>').token(TokenType::T_IS_GREATER)
+
+        // punctuation
+        | NFA(';').token(TokenType::T_SEMICOLON)
+        | NFA(',').token(TokenType::T_COMMA)
+        | NFA('.').token(TokenType::T_PERIOD)
+        | NFA::str("::").token(TokenType::T_DOUBLE_COLON)
+        | NFA(':').token(TokenType::T_COLON)
+        | NFA('(').token(TokenType::T_OPEN_PARENTHESIS)
+        | NFA(')').token(TokenType::T_CLOSE_PARENTHESIS)
+        | NFA('{').token(TokenType::T_OPEN_BRACE)
+        | NFA('}').token(TokenType::T_CLOSE_BRACE)
+        | NFA('[').token(TokenType::T_OPEN_BRACKET)
+        | NFA(']').token(TokenType::T_CLOSE_BRACKET)
+
+        // arithmetic operators
+        | NFA('+').token(TokenType::T_PLUS)
+        | NFA('-').token(TokenType::T_MINUS)
+        | NFA('*').token(TokenType::T_MUL)
+        | NFA('/').token(TokenType::T_DIV)
+
+        // assignment operators
+        | NFA('=').token(TokenType::T_EQUAL)
+
+        // control flow keywords
+        | (NFA::str("and") & ws).token(TokenType::T_AND)
+        | (NFA::str("not") & ws).token(TokenType::T_NOT)
+        | (NFA::str("or") & ws).token(TokenType::T_OR)
+
+        // control flow keywords
+        | (NFA::str("if") & ws).token(TokenType::T_IF)
+        | (NFA::str("then") & ws).token(TokenType::T_THEN)
+        | (NFA::str("else") & ws).token(TokenType::T_ELSE)
+        | (NFA::str("for") & ws).token(TokenType::T_FOR)
+        | (NFA::str("get") & ws).token(TokenType::T_GET)
+        | (NFA::str("put") & ws).token(TokenType::T_PUT)
+        | (NFA::str("return") & ws).token(TokenType::T_RETURN)
+        | (NFA::str("program") & ws).token(TokenType::T_PROGRAM)
+
+        // type declarations
+        | (NFA::str("class") & ws).token(TokenType::T_CLASS)
+        | (NFA::str("int") & ws).token(TokenType::T_INT)
+        | (NFA::str("float") & ws).token(TokenType::T_FLOAT)
+
+        // type atoms
+        | (idToken & ws).token(TokenType::T_IDENTIFIER)
+        | integerToken.token(TokenType::T_INTEGER_LITERAL)
+        | floatToken.token(TokenType::T_FLOAT_LITERAL)
+    );
 
     // convert nfa to dfa
     dfa::DFA dfa = nfa.powerset();
-
-    // simulate various test strings
-    //std::vector<std::string> tests = {
-    //    "",
-    //    "abc",
-    //    "ab_c",
-    //    "0abc",
-    //    "0",
-    //    "1",
-    //    "123",
-    //    "123.",
-    //    "123.0",
-    //    "=",
-    //    "==",
-    //    "a",
-    //    "an",
-    //    "and",
-    //    "not",
-    //    ";",
-    //};
-    //
-    //for (const auto& s : tests) {
-    //    dfa::DFASimulator simulator(dfa);
-    //
-    //    std::for_each(s.cbegin(), s.cend(), [&simulator](const char& c) {
-    //        simulator.move(c);
-    //    });
-    //
-    //    std::cout << s << ": " << (simulator.accepted() ? simulator.token() : "n/a") << std::endl;
-    //}
 
     dfa_ = std::make_unique<dfa::DFASimulator>(dfa);
 }
@@ -79,14 +101,8 @@ void Lexer::startLexing(std::istream* stream)
 
     dfa_->reset();
 
-    //readNextChar();
-    shouldReadChar_ = false;
-    finished_ = false;
-    hitEOF_ = false;
-    //test_ = static_cast<unsigned int>(-1);
-    position_ = 0u;
-    line_ = 0u;
-    //buf_ = ' ';
+    position_ = static_cast<unsigned long>(-1);
+    errors_ = std::vector<ParseError>();
 }
 
 Token* Lexer::getNextToken()
@@ -95,57 +111,92 @@ Token* Lexer::getNextToken()
         return nullptr;
     }
 
-    TokenType lastTokenType = TokenType::T_NONE;
-    std::string value;
-    std::string::size_type tokenLength = 0u;
-
-    unsigned long tokenStartPos = 0u;
-    unsigned long tokenStartLine = 0u;
-    unsigned long tokenStartColumn = 0u;
-
     Token* token = nullptr;
+    TokenType lastTokenType = TokenType::T_NONE;
+
+    // current read buffer
+    std::string value;
+    // token's start index within value
+    std::string::size_type tokenStartIndex = 0u;
+    // token's end index within value
+    std::string::size_type tokenEndIndex = 0u;
+    // token's global position in stream
+    unsigned long tokenPosition = 0u;
+
+    /*
+     * token processing loop
+     */
 
     while (!eof() && token == nullptr) {
 
         bool newToken = true;
 
+        /*
+         * DFA simulation loop
+         */
+
         while (!dfa_->halted()) {
 
+            // read the next input stream character
             if (!readNextChar()) {
-                // EOF
+                // reached EOF
                 break;
             }
 
-            value.push_back(buf_);
-            dfa_->move(buf_);
-
-            if (dfa_->accepted()) {
-                if (newToken) {
-                    tokenStartPos = position_ - buffer_.size();
-                    tokenStartLine = line_;
-                    tokenStartColumn = column_;
-                    newToken = false;
+            // to enable matching of whitespace in the grammar (ie. for separating keywords and idents),
+            // we'll selectively ignore whitespace only if there are no DFA transitions available for it
+            if (nfa::Atom::ws().matches(character_)) {
+                if (dfa_->hasMove(character_)) {
+                    // this whitespace matters for rule selection, consume it
+                    dfa_->move(character_);
+                } else {
+                    // ignore this whitespace & carry on
+                    continue;
                 }
-
-                lastTokenType = dfa_->token();
-                tokenLength = value.size();
             }
 
+            // if we're reading a new (potential) token, set its start index within value to the current char
+            if (newToken) {
+                tokenPosition = position_ - buffer_.size();
+                tokenStartIndex = value.size();
+                newToken = false;
+            }
+
+            // simulate!
+            dfa_->move(character_);
+            value.push_back(character_);
+
+            // if this is an accepting state, set the current token type that we're matching,
+            // and update the end position within value to reflect the match
+            if (dfa_->accepted()) {
+                lastTokenType = dfa_->token();
+                tokenEndIndex = value.size();
+            }
         }
 
-        // return last token handled & reset dfa for next token
-
+        // reset dfa for next token
         dfa_->reset();
 
-        if (tokenLength != 0) {
-            token = new Token(lastTokenType, value.substr(0, tokenLength), tokenStartPos, tokenStartLine, tokenStartColumn);
-            buffer_ += value.substr(tokenLength);
-        } else {
-            // TODO ERROR
-            std::cout << "ERROR (" << value << ')' << std::endl;
+        // return last token handled
+        if (lastTokenType != TokenType::T_NONE) {
+            token = new Token(lastTokenType, value.substr(tokenStartIndex, tokenEndIndex - tokenStartIndex), tokenPosition);
+
+            // if this token isn't at the beginning of the value buffer, it means we have some error input
+            if (tokenStartIndex != 0) {
+                errors_.emplace_back(value.substr(0, tokenStartIndex), tokenPosition - tokenStartIndex);
+            }
+
+            // store anything we've read past the end of the token into our input buffer for processing next call
+            buffer_ += value.substr(tokenEndIndex);
+            value.clear();
         }
 
-        value.clear();
+    }
+
+    // we broke out of the token parse loop without fully using up our value,
+    // hence we reached eof without parsing a valid token
+    if (!value.empty()) {
+        errors_.emplace_back(value, tokenPosition - tokenStartIndex);
     }
 
     return token;
@@ -155,40 +206,14 @@ bool Lexer::readNextChar()
 {
     // try reading from the character buffer first
     if (!buffer_.empty()) {
-        buf_ = buffer_.front();
+        character_ = buffer_.front();
         buffer_.erase(buffer_.begin());
         return true;
     }
 
-    bool carriageReturn = false;
-
     // fetch a character from the input stream
-    while (!stream_->eof()) {
-        stream_->get(buf_);
-        ++position_;
-
-        // handle line count
-        if (buf_ == '\r') {
-            // if we get an \r, don't immediately increment the line count since a \n could follow
-            carriageReturn = true;
-            continue; // optim
-        } else if (buf_ == '\n') {
-            // when we get an \n, always increment the line count
-            ++line_;
-            column_ = 0u;
-            continue; // optim
-        } else if (carriageReturn) {
-            // we only got an \r (Windows), increment line count and stop processing the newline
-            ++line_;
-            column_ = 0u;
-            carriageReturn = false;
-        }
-
-        // skip whitespace
-        if (!isWhitespace(buf_)) {
-            break;
-        }
-    }
+    stream_->get(character_);
+    ++position_;
 
     // don't count eof as a position
     if (stream_->eof()) {
@@ -198,24 +223,6 @@ bool Lexer::readNextChar()
 
     return true;
 }
-
-//bool Lexer::readNextChar()
-//{
-//
-//    if (!buffer_.empty()) {
-//        buf_ = buffer_.front();
-//        buffer_.erase(buffer_.begin());
-//        //--test_;
-//        return true;
-//    } else if (!(*stream_ >> std::ws).eof()) {
-//        pos_ = stream_->tellg();
-//        stream_->get(buf_);
-//        //++test_;
-//        return true;
-//    }
-//
-//    return false;
-//}
 
 bool Lexer::eof()
 {
@@ -230,9 +237,9 @@ bool Lexer::isWhitespace(const char& c)
            ('\f' == c);
 }
 
-bool Lexer::isNewline(const char& c)
+const std::vector<ParseError>& Lexer::getErrors() const
 {
-    return ('\r' == c) || ('\n' == c);
+    return errors_;
 }
 
 }

@@ -6,26 +6,25 @@ set(CMAKE_CXX_STANDARD 14)
 
 # header files
 set(HEADER_FILES
-        lexer/Lexer.h)
+        Log.h
+        lexer/nfa/State.h
+        lexer/nfa/Atom.h
+        lexer/dfa/DFA.h
+        lexer/dfa/DFASimulator.h
+        lexer/TokenType.h
+        lexer/ParseError.h
+        )
 
 # source files
 set(SOURCE_FILES
         lexer/Lexer.cpp
-        lexer/Token.cpp
-        lexer/Token.h
         lexer/nfa/NFA.cpp
-        lexer/nfa/NFA.h
         lexer/nfa/State.cpp
-        lexer/nfa/State.h
         lexer/nfa/Atom.cpp
-        lexer/nfa/Atom.h
         lexer/dfa/DFA.cpp
-        lexer/dfa/DFA.h
         lexer/dfa/DFASimulator.cpp
-        lexer/dfa/DFASimulator.h
         lexer/TokenType.cpp
-        lexer/TokenType.h
-        Log.h)
+        )
 
 # define target
 include_directories(${ROOT_INCLUDE_DIR})

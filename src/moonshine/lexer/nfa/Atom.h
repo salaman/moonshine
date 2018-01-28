@@ -12,6 +12,7 @@ public:
     static Atom digit();
     static Atom nonzero();
     static Atom alphanum();
+    static Atom ws();
     static Atom ch(const char& character);
     static Atom str(const char* character);
 

@@ -7,6 +7,11 @@ DFASimulator::DFASimulator(const DFA& dfa)
 {
 }
 
+bool DFASimulator::hasMove(const char& character)
+{
+    return dfa_.getTransition(currentState_, character).second;
+}
+
 void DFASimulator::move(const char& character)
 {
     if (halted_) {

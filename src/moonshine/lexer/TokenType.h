@@ -63,6 +63,8 @@ enum class TokenType
     T_CLOSE_BRACE,
     T_OPEN_BRACKET,
     T_CLOSE_BRACKET,
+
+    TokenTypeCount
 };
 
 extern std::map<TokenType, const char*> TokenName;
