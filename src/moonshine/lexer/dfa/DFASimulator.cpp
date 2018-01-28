@@ -1,6 +1,6 @@
 #include "DFASimulator.h"
 
-namespace dfa {
+namespace moonshine { namespace dfa {
 
 DFASimulator::DFASimulator(const DFA& dfa)
     : dfa_(dfa), currentState_(0), halted_(false)
@@ -28,4 +28,22 @@ bool DFASimulator::accepted() const
     return !halted_ && dfa_.isFinal(currentState_);
 }
 
+bool DFASimulator::halted() const
+{
+    return halted_;
 }
+
+TokenType DFASimulator::token() const
+{
+    auto state = dfa_.getNFAStateForFinalState(currentState_);
+
+    return state.getToken();
+}
+
+void DFASimulator::reset()
+{
+    currentState_ = 0;
+    halted_ = false;
+}
+
+}}

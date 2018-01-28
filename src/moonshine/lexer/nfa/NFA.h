@@ -3,14 +3,16 @@
 #include "moonshine/lexer/nfa/State.h"
 #include "moonshine/lexer/nfa/Atom.h"
 #include "moonshine/lexer/dfa/DFA.h"
+#include "moonshine/lexer/TokenType.h"
 
 #include <memory>
 #include <set>
 #include <unordered_set>
 #include <map>
 #include <utility>
+#include <string>
 
-namespace nfa {
+namespace moonshine { namespace nfa {
 
 typedef std::vector<State>::size_type size_t;
 
@@ -30,6 +32,7 @@ public:
     template<typename Iter>
     std::set<size_t> move(Iter begin, Iter end, const char& symbol);
     bool isFinal(const size_t& index) const;
+    NFA& attachToken(const TokenType& token);
 
     NFA operator&(const NFA& rhs) const;
     NFA operator|(const NFA& rhs) const;
@@ -41,4 +44,4 @@ private:
     std::unordered_set<char> alphabet_;
 };
 
-}
+}}

@@ -17,18 +17,15 @@ set(SOURCE_FILES
         lexer/nfa/NFA.h
         lexer/nfa/State.cpp
         lexer/nfa/State.h
-#        lexer/nfa/ICharacter.cpp
-#        lexer/nfa/ICharacter.h
-#        lexer/TokenBuilder.cpp
-#        lexer/TokenBuilder.h
-#        lexer/nfa/NFABuilder.cpp
-#        lexer/nfa/NFABuilder.h
         lexer/nfa/Atom.cpp
         lexer/nfa/Atom.h
         lexer/dfa/DFA.cpp
         lexer/dfa/DFA.h
-        lexer/dfa/CombinedState.cpp
-        lexer/dfa/CombinedState.h lexer/dfa/DFASimulator.cpp lexer/dfa/DFASimulator.h)
+        lexer/dfa/DFASimulator.cpp
+        lexer/dfa/DFASimulator.h
+        lexer/TokenType.cpp
+        lexer/TokenType.h
+        Log.h)
 
 # define target
 include_directories(${ROOT_INCLUDE_DIR})

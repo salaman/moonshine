@@ -16,3 +16,4 @@ add_subdirectory(vendor/catch EXCLUDE_FROM_ALL)
 
 # project sources
 add_subdirectory(src)
+add_subdirectory(test)

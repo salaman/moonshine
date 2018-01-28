@@ -1,67 +1,59 @@
-#include <moonshine/lexer/nfa/NFA.h>
-#include <moonshine/lexer/dfa/DFA.h>
-#include <moonshine/lexer/dfa/DFASimulator.h>
+#include <moonshine/lexer/Lexer.h>
+#include <moonshine/lexer/Token.h>
+#include <moonshine/lexer/TokenType.h>
 
 #include <iostream>
 #include <algorithm>
 #include <string>
+#include <fstream>
+#include <sstream>
 
-using namespace nfa;
+//using namespace moonshine;
 
 int main()
 {
-    // build an nfa to accept language
-    NFA idToken = NFA(Atom::letter()) & NFA(Atom::alphanum()).kleene();
+    moonshine::Lexer lex;
 
-    NFA integerToken = (NFA(Atom::nonzero()) & NFA(Atom::digit()).kleene())
-                       | NFA('0');
+    std::istringstream stream("_abc1;_1abc;.;abc~abc");
 
-    NFA fractionAtom = (NFA('.') & NFA(Atom::digit()).kleene() & NFA(Atom::nonzero()))
-                       | (NFA('.') & NFA('0'));
+    lex.startLexing(&stream);
 
-    NFA floatToken = integerToken & fractionAtom;
+    moonshine::Token* token = nullptr;
 
-    NFA equalsToken = NFA('=') & NFA('=');
-    NFA andToken = NFA::str("and");
-    NFA notToken = NFA::str("not");
+    while ((token = lex.getNextToken()) != nullptr) {
+        std::cout << token->name() << " (" << token->value << ')' << std::endl;
 
-    NFA nfa = idToken
-              | integerToken
-              | floatToken
-              | equalsToken
-              | notToken;
-
-    // convert nfa to dfa
-    dfa::DFA dfa = nfa.powerset();
-
-    // simulate various test strings
-    std::vector<std::string> tests = {
-        "",
-        "abc",
-        "ab_c",
-        "0abc",
-        "0",
-        "1",
-        "123",
-        "123.",
-        "123.0",
-        "=",
-        "==",
-        "a",
-        "an",
-        "and",
-        "not",
-    };
-
-    for (const auto& s : tests) {
-        dfa::DFASimulator simulator(dfa);
-
-        std::for_each(s.cbegin(), s.cend(), [&simulator](const char& c) {
-            simulator.move(c);
-        });
-
-        std::cout << s << ": " << (simulator.accepted() ? "yes" : "no") << std::endl;
+        delete token;
     }
+
+    //// simulate various test strings
+    //std::vector<std::string> tests = {
+    //    "",
+    //    "abc",
+    //    "ab_c",
+    //    "0abc",
+    //    "0",
+    //    "1",
+    //    "123",
+    //    "123.",
+    //    "123.0",
+    //    "=",
+    //    "==",
+    //    "a",
+    //    "an",
+    //    "and",
+    //    "not",
+    //};
+    //
+    //for (const auto& s : tests) {
+    //    dfa::DFASimulator simulator(dfa);
+    //
+    //    std::for_each(s.cbegin(), s.cend(), [&simulator](const char& c) {
+    //        simulator.move(c);
+    //    });
+    //
+    //    std::cout << s << ": " << (simulator.accepted() ? simulator.token() : "n/a") << std::endl;
+    //}
 
     return 0;
 }

@@ -4,7 +4,7 @@
 #include <forward_list>
 #include <functional>
 
-namespace nfa {
+namespace moonshine { namespace nfa {
 
 NFA::NFA()
     : states_(), start_(0), final_({0}), transitions_(), alphabet_()
@@ -84,7 +84,7 @@ dfa::DFA NFA::powerset()
     // mark start as final if required
     for (const auto& s: temp.getState(startState)) {
         if (isFinal(s)) {
-            temp.markFinal(startState);
+            temp.markFinal(startState, s);
             break;
         }
     }
@@ -100,6 +100,10 @@ dfa::DFA NFA::powerset()
             auto moves = move(T.cbegin(), T.cend(), a);
             auto S = epsilonClosure(moves.cbegin(), moves.cend());
 
+            if (S.empty()) {
+                continue;
+            }
+
             // if S is not in Sdfa
             // add S to Sdfa as unmarked
             auto result = temp.getOrAddState(S);
@@ -109,7 +113,7 @@ dfa::DFA NFA::powerset()
                 for (const auto& s : temp.getState(result.first)) {
                     // TODO: optimize with isAnyFinal(set)
                     if (isFinal(s)) {
-                        temp.markFinal(result.first);
+                        temp.markFinal(result.first, s);
                         break;
                     }
                 }
@@ -245,4 +249,13 @@ bool NFA::isFinal(const size_t& index) const
     return final_.find(index) != final_.end();
 }
 
+NFA& NFA::attachToken(const TokenType& token)
+{
+    for (const auto& s : final_) {
+        states_[s].setToken(token);
+    }
+
+    return *this;
 }
+
+}}

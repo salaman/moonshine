@@ -1,24 +1,22 @@
 #pragma once
 
-#include "ICharacter.h"
-#include "Atom.h"
+#include "moonshine/lexer/TokenType.h"
 
 #include <vector>
 #include <utility>
 #include <memory>
+#include <string>
 
-namespace nfa {
+namespace moonshine { namespace nfa {
 
 class State
 {
 public:
-    //CombinedState();
-    //void addTransition(const Atom& atom, State state);
-    //void markFinal();
-    //void unmarkFinal();
+    State();
+    const TokenType& getToken() const;
+    void setToken(const TokenType& token_);
 private:
-    //bool isFinal_;
-    //std::vector<std::pair<Atom, State>> transitions_;
+    TokenType token_;
 };
 
-}
+}}

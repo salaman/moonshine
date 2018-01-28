@@ -1,5 +1,7 @@
 #include "Atom.h"
 
+namespace moonshine { namespace nfa {
+
 Atom::Atom()
     : characters_()
 {
@@ -93,7 +95,7 @@ Atom Atom::operator+(const Atom& rhs)
 {
     Atom temp(*this);
 
-    temp.characters_.insert(rhs.characters_.cbegin(), rhs.characters_.cend());
+    temp += rhs;
 
     return temp;
 }
@@ -104,3 +106,5 @@ Atom& Atom::operator+=(const Atom& rhs)
 
     return *this;
 }
+
+}}

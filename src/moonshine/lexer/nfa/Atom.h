@@ -2,6 +2,8 @@
 
 #include <set>
 
+namespace moonshine { namespace nfa {
+
 class Atom
 {
 public:
@@ -24,3 +26,5 @@ public:
 private:
     std::set<char> characters_;
 };
+
+}}
