@@ -68,7 +68,7 @@ TEST_LEXER("abc1_", \
 )
 
 TEST_LEXER("_abc1", \
-    REQUIRE_TOKEN(TokenType::T_NONE, "_");
+    //REQUIRE_TOKEN(TokenType::T_NONE, "_");
     REQUIRE_TOKEN(TokenType::T_IDENTIFIER, "abc1");
 )
 
@@ -78,7 +78,16 @@ TEST_LEXER("1abc", \
 )
 
 TEST_LEXER("_1abc", \
-    REQUIRE_TOKEN(TokenType::T_NONE, "_");
+    //REQUIRE_TOKEN(TokenType::T_NONE, "_");
     REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "1");
     REQUIRE_TOKEN(TokenType::T_IDENTIFIER, "abc");
+)
+
+TEST_LEXER("12.3400000", \
+    REQUIRE_TOKEN(TokenType::T_FLOAT_LITERAL, "12.34");
+    REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "0");
+    REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "0");
+    REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "0");
+    REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "0");
+    REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "0");
 )

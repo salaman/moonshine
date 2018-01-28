@@ -14,14 +14,25 @@ int main()
 {
     moonshine::Lexer lex;
 
-    std::istringstream stream("_abc1;_1abc;.;abc~abc");
+    std::istringstream stream("__abc ; 1.2000");
+    //std::istringstream stream("abc");
+
+    //std::cout << stream.tellg() << std::endl;
+    //std::cout << (char) stream.get() << std::endl;
+    //std::cout << stream.tellg() << std::endl;
+    //std::cout << (char) stream.get() << std::endl;
+    //std::cout << stream.tellg() << std::endl;
+    //std::cout << (char) stream.get() << std::endl;
+    //std::cout << stream.tellg() << std::endl;
+    //std::cout << (char) stream.get() << std::endl;
+    //std::cout << stream.eof() << std::endl;
 
     lex.startLexing(&stream);
 
     moonshine::Token* token = nullptr;
 
     while ((token = lex.getNextToken()) != nullptr) {
-        std::cout << token->name() << " (" << token->value << ')' << std::endl;
+        std::cout << token->name() << " \"" << token->value << "\" " << token->position << std::endl;
 
         delete token;
     }
