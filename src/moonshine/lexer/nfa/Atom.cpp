@@ -3,19 +3,24 @@
 namespace moonshine { namespace nfa {
 
 Atom::Atom()
-    : characters_()
+    : Atom("")
+{
+}
+
+Atom::Atom(const std::string& label)
+    : characters_(), label_(label)
 {
 }
 
 Atom Atom::epsilon()
 {
-    static Atom A;
+    static Atom A("ɛ");
     return A;
 }
 
 Atom Atom::letter()
 {
-    Atom temp;
+    Atom temp("letter");
 
     for (char c = 'a'; c <= 'z'; ++c) {
         temp.characters_.insert(c);
@@ -30,18 +35,20 @@ Atom Atom::letter()
 
 Atom Atom::digit()
 {
-    Atom temp;
+    Atom temp("digit");
 
     for (char c = '0'; c <= '9'; ++c) {
         temp.characters_.insert(c);
     }
+
+    temp.label_ = "l";
 
     return temp;
 }
 
 Atom Atom::nonzero()
 {
-    Atom temp;
+    Atom temp("nonzero");
 
     for (char c = '1'; c <= '9'; ++c) {
         temp.characters_.insert(c);
@@ -53,18 +60,20 @@ Atom Atom::nonzero()
 Atom Atom::alphanum()
 {
     static Atom a = Atom::letter() + Atom::digit() + Atom::ch('_');
+    a.label_ = "alphanum";
     return a;
 }
 
 Atom Atom::ws()
 {
     static Atom a = Atom::str(" \n\r\t\b\v\f");
+    a.label_ = "white";
     return a;
 }
 
 Atom Atom::ch(const char& character)
 {
-    Atom temp;
+    Atom temp({character});
 
     temp.characters_.insert(character);
 
@@ -73,7 +82,7 @@ Atom Atom::ch(const char& character)
 
 Atom Atom::str(const char* string)
 {
-    Atom temp;
+    Atom temp(string);
 
     for (int i = 0; string[i] != '\0'; ++i) {
         temp += Atom::ch(string[i]);
@@ -111,6 +120,11 @@ Atom& Atom::operator+=(const Atom& rhs)
     characters_.insert(rhs.characters_.cbegin(), rhs.characters_.cend());
 
     return *this;
+}
+
+const std::string& Atom::label() const
+{
+    return label_;
 }
 
 }}

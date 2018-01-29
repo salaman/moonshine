@@ -36,6 +36,8 @@ public:
     bool isFinal(const size_t& index) const;
     NFA& token(const TokenType& token);
 
+    void graphviz() const;
+
     NFA operator&(const NFA& rhs) const;
     NFA operator|(const NFA& rhs) const;
 private:

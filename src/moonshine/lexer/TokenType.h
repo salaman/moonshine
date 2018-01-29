@@ -12,7 +12,6 @@ enum class TokenType
     T_IDENTIFIER,
     T_INTEGER_LITERAL,
     T_FLOAT_LITERAL,
-    T_COMMENT,
 
     // comparison operators
     T_IS_EQUAL,
@@ -63,6 +62,11 @@ enum class TokenType
     T_CLOSE_BRACE,
     T_OPEN_BRACKET,
     T_CLOSE_BRACKET,
+
+    // comments
+    T_COMMENT,
+    T_OPEN_COMMENT,
+    T_CLOSE_COMMENT,
 
     TokenTypeCount
 };

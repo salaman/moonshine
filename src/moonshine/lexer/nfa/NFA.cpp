@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <forward_list>
 #include <functional>
+#include <iostream>
 
 namespace moonshine { namespace nfa {
 
@@ -278,6 +279,32 @@ NFA& NFA::token(const TokenType& token)
     }
 
     return *this;
+}
+
+void NFA::graphviz() const
+{
+    std::cout << "digraph nfa {" << std::endl;
+
+    std::cout << R"(    forcelabels=true)" << std::endl;
+    std::cout << R"(    "" [shape=none])" << std::endl;
+
+    for (const auto& f : final_) {
+        std::cout << "    \"" << f << R"(" [shape=doublecircle, label=")" << TokenName[states_[f].getToken()] << "\"]" << std::endl;
+    }
+
+    // start state
+    std::cout << R"(    "" -> ")" << start_ << "\"" << std::endl;
+
+    for (const auto& t : transitions_) {
+        std::cout << "    \"" << t.first << "\" -> \"" << t.second.second << "\"";
+        std::cout << " [label=\"" << t.second.first.label() ;
+
+        //if ()
+
+        std::cout << "\"]" << std::endl;
+    }
+
+    std::cout << "}" << std::endl;
 }
 
 }}

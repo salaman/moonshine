@@ -10,6 +10,8 @@ std::map<TokenType, const char*> TokenName = {
     {TokenType::T_INTEGER_LITERAL, "integer_literal"},
     {TokenType::T_FLOAT_LITERAL, "float_literal"},
     {TokenType::T_COMMENT, "comment"},
+    {TokenType::T_OPEN_COMMENT, "open_comment"},
+    {TokenType::T_CLOSE_COMMENT, "close_comment"},
     {TokenType::T_IS_EQUAL, "eq"},
     {TokenType::T_IS_NOT_EQUAL, "neq"},
     {TokenType::T_IS_SMALLER, "lt"},

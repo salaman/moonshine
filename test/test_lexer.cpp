@@ -129,7 +129,7 @@ TEST_LEXER("<", \
 )
 
 TEST_LEXER(">", \
-     REQUIRE_TOKEN(TokenType::T_IS_GREATER, ">", 0);
+    REQUIRE_TOKEN(TokenType::T_IS_GREATER, ">", 0);
     REQUIRE_NO_ERRORS();
 )
 

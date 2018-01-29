@@ -92,6 +92,8 @@ Lexer::Lexer()
     // convert nfa to dfa
     dfa::DFA dfa = nfa.powerset();
 
+    //nfa.graphviz();
+
     dfa_ = std::make_unique<dfa::DFASimulator>(dfa);
 }
 
