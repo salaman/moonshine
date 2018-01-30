@@ -21,9 +21,9 @@ int main(int argc, const char** argv)
 
     moonshine::Lexer lex;
 
-    std::istringstream stream("1 2 3");
-    lex.startLexing(&stream);
-    //lex.startLexing(&std::cin);
+    //std::istringstream stream("int Utility::findMin(int array[100]){");
+    //lex.startLexing(&stream);
+    lex.startLexing(&std::cin);
 
     moonshine::Token* token = nullptr;
 
@@ -37,23 +37,21 @@ int main(int argc, const char** argv)
         delete token;
     }
 
-    if (atocc) {
-        std::cout << std::endl;
-    } else {
-        for (const auto& e : lex.getErrors()) {
-            switch (e.type) {
-                case ParseErrorType::E_INVALID_CHARACTERS:
-                    std::cerr << "Invalid characters";
-                    break;
-                case ParseErrorType::E_UNTERMINATED_COMMENT:
-                    std::cerr << "Unterminated comment";
-                    break;
-                default:
-                    break;
-            }
+    std::cout << std::endl;
 
-            std::cerr << ": \"" << e.value << "\" @ " << e.position << std::endl;
+    for (const auto& e : lex.getErrors()) {
+        switch (e.type) {
+            case ParseErrorType::E_INVALID_CHARACTERS:
+                std::cerr << "Invalid characters";
+                break;
+            case ParseErrorType::E_UNTERMINATED_COMMENT:
+                std::cerr << "Unterminated comment";
+                break;
+            default:
+                break;
         }
+
+        std::cerr << ": \"" << e.value << "\" @ " << e.position << std::endl;
     }
 
     return 0;

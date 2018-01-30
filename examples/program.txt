@@ -1,0 +1,25 @@
+class foo {
+
+  hello(int world) {
+    return world + 1;
+  }
+
+  int main() {
+    // line comment //
+    int a = 0;
+    float b = 1.0;
+    float c = 12.34e+5;
+
+    if (c >= a and (b-1) == 0) {
+        return 1;
+    } else {
+        return 0;
+    }
+  }
+
+  /* multiline
+   * comments 
+   * are
+   * fun */
+
+}

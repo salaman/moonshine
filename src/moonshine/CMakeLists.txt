@@ -1,8 +1,8 @@
 # target name
 set(TARGET moonshine)
 
-# enable C++14
-set(CMAKE_CXX_STANDARD 14)
+# enable C++11
+set(CMAKE_CXX_STANDARD 11)
 
 # header files
 set(HEADER_FILES
@@ -31,4 +31,3 @@ set(SOURCE_FILES
 include_directories(${ROOT_INCLUDE_DIR})
 add_library(${TARGET} STATIC ${SOURCE_FILES} ${HEADER_FILES})
 target_include_directories(${TARGET} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
-target_set_warnings(${TARGET} ENABLE ALL AS_ERROR ALL DISABLE Annoying)

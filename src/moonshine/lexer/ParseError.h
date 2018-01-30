@@ -15,8 +15,8 @@ enum class ParseErrorType {
 
 struct ParseError
 {
-    ParseError(const ParseErrorType& type, const std::string& value, const unsigned long& position)
-        : type(type), value(value), position(position)
+    ParseError(const ParseErrorType& type_, const std::string& value_, const unsigned long& position_)
+        : type(type_), value(value_), position(position_)
     {}
 
     const ParseErrorType type;

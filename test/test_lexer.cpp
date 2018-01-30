@@ -415,6 +415,34 @@ TEST_LEXER("1 23", \
     REQUIRE_NO_ERRORS();
 )
 
+TEST_LEXER("= = ==", \
+    REQUIRE_TOKEN(TokenType::T_EQUAL, "=", 0);
+    REQUIRE_TOKEN(TokenType::T_EQUAL, "=", 2);
+    REQUIRE_TOKEN(TokenType::T_IS_EQUAL, "==", 4);
+    REQUIRE_NO_ERRORS();
+)
+
+TEST_LEXER("> = >=", \
+    REQUIRE_TOKEN(TokenType::T_IS_GREATER, ">", 0);
+    REQUIRE_TOKEN(TokenType::T_EQUAL, "=", 2);
+    REQUIRE_TOKEN(TokenType::T_IS_GREATER_OR_EQUAL, ">=", 4);
+    REQUIRE_NO_ERRORS();
+)
+
+TEST_LEXER("< = <=", \
+    REQUIRE_TOKEN(TokenType::T_IS_SMALLER, "<", 0);
+    REQUIRE_TOKEN(TokenType::T_EQUAL, "=", 2);
+    REQUIRE_TOKEN(TokenType::T_IS_SMALLER_OR_EQUAL, "<=", 4);
+    REQUIRE_NO_ERRORS();
+)
+
+TEST_LEXER(": : ::", \
+    REQUIRE_TOKEN(TokenType::T_COLON, ":", 0);
+    REQUIRE_TOKEN(TokenType::T_COLON, ":", 2);
+    REQUIRE_TOKEN(TokenType::T_DOUBLE_COLON, "::", 4);
+    REQUIRE_NO_ERRORS();
+)
+
 /*
  * float exponent notation
  */
@@ -452,6 +480,33 @@ TEST_LEXER("12.34e-123", \
     REQUIRE_NO_ERRORS();
 )
 
+TEST_LEXER("12.34_e+1", \
+    REQUIRE_TOKEN(TokenType::T_FLOAT_LITERAL, "12.34", 0);
+    REQUIRE_TOKEN(TokenType::T_IDENTIFIER, "e", 6);
+    REQUIRE_TOKEN(TokenType::T_PLUS, "+", 7);
+    REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "1", 8);
+    REQUIRE_ERRORS(1);
+    REQUIRE_ERROR(ParseErrorType::E_INVALID_CHARACTERS, "_", 5);
+)
+
+TEST_LEXER("12.34 e+1", \
+    REQUIRE_TOKEN(TokenType::T_FLOAT_LITERAL, "12.34", 0);
+    REQUIRE_TOKEN(TokenType::T_IDENTIFIER, "e", 6);
+    REQUIRE_TOKEN(TokenType::T_PLUS, "+", 7);
+    REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "1", 8);
+    REQUIRE_NO_ERRORS();
+)
+
+TEST_LEXER("12.34e0", \
+    REQUIRE_TOKEN(TokenType::T_FLOAT_LITERAL, "12.34e0", 0);
+    REQUIRE_NO_ERRORS();
+)
+
+TEST_LEXER("12.34e1", \
+    REQUIRE_TOKEN(TokenType::T_FLOAT_LITERAL, "12.34e1", 0);
+    REQUIRE_NO_ERRORS();
+)
+
 /*
  * compound statements
  */
@@ -481,6 +536,48 @@ TEST_LEXER("program {\n/*\nint a1_ = 123;\n*/\n}", \
     REQUIRE_TOKEN(TokenType::T_PROGRAM, "program", 0);
     REQUIRE_TOKEN(TokenType::T_OPEN_BRACE, "{", 8);
     REQUIRE_TOKEN(TokenType::T_CLOSE_BRACE, "}", 31);
+    REQUIRE_NO_ERRORS();
+)
+
+TEST_LEXER("int Utility::findMin(int array[100]){", \
+    REQUIRE_TOKEN(TokenType::T_INT, "int", 0);
+    REQUIRE_TOKEN(TokenType::T_IDENTIFIER, "Utility", 4);
+    REQUIRE_TOKEN(TokenType::T_DOUBLE_COLON, "::", 11);
+    REQUIRE_TOKEN(TokenType::T_IDENTIFIER, "findMin", 13);
+    REQUIRE_TOKEN(TokenType::T_OPEN_PARENTHESIS, "(", 20);
+    REQUIRE_TOKEN(TokenType::T_INT, "int", 21);
+    REQUIRE_TOKEN(TokenType::T_IDENTIFIER, "array", 25);
+    REQUIRE_TOKEN(TokenType::T_OPEN_BRACKET, "[", 30);
+    REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "100", 31);
+    REQUIRE_TOKEN(TokenType::T_CLOSE_BRACKET, "]", 34);
+    REQUIRE_TOKEN(TokenType::T_CLOSE_PARENTHESIS, ")", 35);
+    REQUIRE_TOKEN(TokenType::T_OPEN_BRACE, "{", 36);
+    REQUIRE_NO_ERRORS();
+)
+
+TEST_LEXER("  value = 1.05 + ((2.04 * 2.47)  - 3.0) + 7.0006 > 1 and not - 1; ", \
+    REQUIRE_TOKEN(TokenType::T_IDENTIFIER, "value", 2);
+    REQUIRE_TOKEN(TokenType::T_EQUAL, "=", 8);
+    REQUIRE_TOKEN(TokenType::T_FLOAT_LITERAL, "1.05", 10);
+    REQUIRE_TOKEN(TokenType::T_PLUS, "+", 15);
+    REQUIRE_TOKEN(TokenType::T_OPEN_PARENTHESIS, "(", 17);
+    REQUIRE_TOKEN(TokenType::T_OPEN_PARENTHESIS, "(", 18);
+    REQUIRE_TOKEN(TokenType::T_FLOAT_LITERAL, "2.04", 19);
+    REQUIRE_TOKEN(TokenType::T_MUL, "*", 24);
+    REQUIRE_TOKEN(TokenType::T_FLOAT_LITERAL, "2.47", 26);
+    REQUIRE_TOKEN(TokenType::T_CLOSE_PARENTHESIS, ")", 30);
+    REQUIRE_TOKEN(TokenType::T_MINUS, "-", 33);
+    REQUIRE_TOKEN(TokenType::T_FLOAT_LITERAL, "3.0", 35);
+    REQUIRE_TOKEN(TokenType::T_CLOSE_PARENTHESIS, ")", 38);
+    REQUIRE_TOKEN(TokenType::T_PLUS, "+", 40);
+    REQUIRE_TOKEN(TokenType::T_FLOAT_LITERAL, "7.0006", 42);
+    REQUIRE_TOKEN(TokenType::T_IS_GREATER, ">", 49);
+    REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "1", 51);
+    REQUIRE_TOKEN(TokenType::T_AND, "and", 53);
+    REQUIRE_TOKEN(TokenType::T_NOT, "not", 57);
+    REQUIRE_TOKEN(TokenType::T_MINUS, "-", 61);
+    REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "1", 63);
+    REQUIRE_TOKEN(TokenType::T_SEMICOLON, ";", 64);
     REQUIRE_NO_ERRORS();
 )
 

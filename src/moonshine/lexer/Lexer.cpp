@@ -28,7 +28,7 @@ Lexer::Lexer()
     NFA fractionAtom = (NFA('.') & NFA(Atom::digit()).kleene() & NFA(Atom::nonzero()))
                        | NFA::str(".0");
 
-    NFA exponentAtom = NFA('e') & (NFA('+') | NFA('-')) & integerToken;
+    NFA exponentAtom = NFA('e') & (NFA('+') | NFA('-')).optional() & integerToken;
 
     NFA floatToken = integerToken & fractionAtom & exponentAtom.optional();
 
@@ -37,16 +37,16 @@ Lexer::Lexer()
         NFA::str("==").token(TokenType::T_IS_EQUAL)
         | NFA::str("<>").token(TokenType::T_IS_NOT_EQUAL)
         | NFA::str("<=").token(TokenType::T_IS_SMALLER_OR_EQUAL)
-        | NFA('<').token(TokenType::T_IS_SMALLER)
+        | (NFA('<') & ws).token(TokenType::T_IS_SMALLER)
         | NFA::str(">=").token(TokenType::T_IS_GREATER_OR_EQUAL)
-        | NFA('>').token(TokenType::T_IS_GREATER)
+        | (NFA('>') & ws).token(TokenType::T_IS_GREATER)
 
         // punctuation
         | NFA(';').token(TokenType::T_SEMICOLON)
         | NFA(',').token(TokenType::T_COMMA)
         | NFA('.').token(TokenType::T_PERIOD)
         | NFA::str("::").token(TokenType::T_DOUBLE_COLON)
-        | NFA(':').token(TokenType::T_COLON)
+        | (NFA(':') & ws).token(TokenType::T_COLON)
         | NFA('(').token(TokenType::T_OPEN_PARENTHESIS)
         | NFA(')').token(TokenType::T_CLOSE_PARENTHESIS)
         | NFA('{').token(TokenType::T_OPEN_BRACE)
@@ -61,7 +61,7 @@ Lexer::Lexer()
         | NFA('/').token(TokenType::T_DIV)
 
         // assignment operators
-        | NFA('=').token(TokenType::T_EQUAL)
+        | (NFA('=') & ws).token(TokenType::T_EQUAL)
 
         // control flow keywords
         | (NFA::str("and") & ws).token(TokenType::T_AND)
@@ -94,7 +94,7 @@ Lexer::Lexer()
 
     //nfa.graphviz();
 
-    dfa_ = std::make_unique<dfa::DFASimulator>(dfa);
+    dfa_ = std::unique_ptr<dfa::DFASimulator>(new dfa::DFASimulator(dfa));
 }
 
 void Lexer::startLexing(std::istream* stream)
