@@ -2,17 +2,19 @@
 
 #include <moonshine/lexer/Lexer.h>
 #include <moonshine/lexer/TokenType.h>
+#include <moonshine/lexer/ParseError.h>
 
 #include <sstream>
 
 #define REQUIRE_TOKEN(TYPE, VALUE, POS) \
-    REQUIRE((token = lex.getNextToken()) != nullptr); \
+    REQUIRE(token != nullptr); \
     REQUIRE(token->type == (TYPE)); \
     REQUIRE(token->value == (VALUE)); \
     REQUIRE(token->position == (POS)); \
-    delete token
+    delete token; \
+    token = lex.getNextToken() \
 
-#define REQUIRE_EOF() REQUIRE((token = lex.getNextToken()) == nullptr)
+#define REQUIRE_EOF() REQUIRE(token == nullptr)
 
 #define REQUIRE_NO_ERRORS() REQUIRE(lex.getErrors().empty())
 
@@ -20,7 +22,8 @@
     unsigned int __error_counter = 0; \
     REQUIRE(lex.getErrors().size() == (COUNT))
 
-#define REQUIRE_ERROR(VALUE, POS) \
+#define REQUIRE_ERROR(TYPE, VALUE, POS) \
+    REQUIRE(lex.getErrors()[__error_counter].type == (TYPE)); \
     REQUIRE(lex.getErrors()[__error_counter].value == (VALUE)); \
     REQUIRE(lex.getErrors()[__error_counter++].position == (POS))
 
@@ -29,7 +32,7 @@
         Lexer lex; \
         std::istringstream stream((EXPR)); \
         lex.startLexing(&stream); \
-        Token* token = nullptr; \
+        Token* token = lex.getNextToken(); \
         REQS \
         REQUIRE_EOF(); \
     }
@@ -93,7 +96,7 @@ TEST_LEXER("abc1_", \
 TEST_LEXER("_abc1", \
     REQUIRE_TOKEN(TokenType::T_IDENTIFIER, "abc1", 1);
     REQUIRE_ERRORS(1);
-    REQUIRE_ERROR("_", 0);
+    REQUIRE_ERROR(ParseErrorType::E_INVALID_CHARACTERS, "_", 0);
 )
 
 TEST_LEXER("1abc", \
@@ -106,7 +109,29 @@ TEST_LEXER("_1abc", \
     REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "1", 1);
     REQUIRE_TOKEN(TokenType::T_IDENTIFIER, "abc", 2);
     REQUIRE_ERRORS(1);
-    REQUIRE_ERROR("_", 0);
+    REQUIRE_ERROR(ParseErrorType::E_INVALID_CHARACTERS, "_", 0);
+)
+
+TEST_LEXER("0", \
+    REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "0", 0);
+    REQUIRE_NO_ERRORS();
+)
+
+TEST_LEXER("0.0", \
+    REQUIRE_TOKEN(TokenType::T_FLOAT_LITERAL, "0.0", 0);
+    REQUIRE_NO_ERRORS();
+)
+
+TEST_LEXER("0.", \
+    REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "0", 0);
+    REQUIRE_TOKEN(TokenType::T_PERIOD, ".", 1);
+    REQUIRE_NO_ERRORS();
+)
+
+TEST_LEXER(".0", \
+    REQUIRE_TOKEN(TokenType::T_PERIOD, ".", 0);
+    REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "0", 1);
+    REQUIRE_NO_ERRORS();
 )
 
 /*
@@ -303,7 +328,10 @@ TEST_LEXER("   abc      ", \
 )
 
 TEST_LEXER("\r\n1 \n. \t2  \r3  abc\n", \
-    REQUIRE_TOKEN(TokenType::T_FLOAT_LITERAL, "1.23", 2);
+    REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "1", 2);
+    REQUIRE_TOKEN(TokenType::T_PERIOD, ".", 5);
+    REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "2", 8);
+    REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "3", 12);
     REQUIRE_TOKEN(TokenType::T_IDENTIFIER, "abc", 15);
     REQUIRE_NO_ERRORS();
 )
@@ -354,6 +382,36 @@ TEST_LEXER("abc anddef", \
 
 TEST_LEXER("abcanddef", \
     REQUIRE_TOKEN(TokenType::T_IDENTIFIER, "abcanddef", 0);
+    REQUIRE_NO_ERRORS();
+)
+
+TEST_LEXER("int int", \
+    REQUIRE_TOKEN(TokenType::T_INT, "int", 0);
+    REQUIRE_TOKEN(TokenType::T_INT, "int", 4);
+    REQUIRE_NO_ERRORS();
+)
+
+TEST_LEXER("intint", \
+    REQUIRE_TOKEN(TokenType::T_IDENTIFIER, "intint", 0);
+    REQUIRE_NO_ERRORS();
+)
+
+TEST_LEXER("1 2 3", \
+    REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "1", 0);
+    REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "2", 2);
+    REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "3", 4);
+    REQUIRE_NO_ERRORS();
+)
+
+TEST_LEXER("12 3", \
+    REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "12", 0);
+    REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "3", 3);
+    REQUIRE_NO_ERRORS();
+)
+
+TEST_LEXER("1 23", \
+    REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "1", 0);
+    REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "23", 2);
     REQUIRE_NO_ERRORS();
 )
 
@@ -419,19 +477,111 @@ TEST_LEXER("program {\nint a1_ = 123;\n}", \
     REQUIRE_NO_ERRORS();
 )
 
+TEST_LEXER("program {\n/*\nint a1_ = 123;\n*/\n}", \
+    REQUIRE_TOKEN(TokenType::T_PROGRAM, "program", 0);
+    REQUIRE_TOKEN(TokenType::T_OPEN_BRACE, "{", 8);
+    REQUIRE_TOKEN(TokenType::T_CLOSE_BRACE, "}", 31);
+    REQUIRE_NO_ERRORS();
+)
+
 /*
  * empty input
  */
 
 TEST_LEXER("", REQUIRE_NO_ERRORS();)
-
 TEST_LEXER(" ", REQUIRE_NO_ERRORS();)
-
 TEST_LEXER("\r\n", REQUIRE_NO_ERRORS();)
-
 TEST_LEXER("\n\r   \t \n \n", REQUIRE_NO_ERRORS();)
 
 /*
- * error handling
+ * comment handling
  */
 
+TEST_LEXER("int //;a", \
+    REQUIRE_TOKEN(TokenType::T_INT, "int", 0);
+    REQUIRE_NO_ERRORS();
+)
+
+TEST_LEXER("int /*;*/a", \
+    REQUIRE_TOKEN(TokenType::T_INT, "int", 0);
+    REQUIRE_TOKEN(TokenType::T_IDENTIFIER, "a", 9);
+    REQUIRE_NO_ERRORS();
+)
+
+TEST_LEXER("int //a\n123", \
+    REQUIRE_TOKEN(TokenType::T_INT, "int", 0);
+    REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "123", 8);
+    REQUIRE_NO_ERRORS();
+)
+
+TEST_LEXER("_a/*x \r\n123* // / */b\n1 /;//*a*/\nc", \
+    REQUIRE_TOKEN(TokenType::T_IDENTIFIER, "a", 1);
+    REQUIRE_TOKEN(TokenType::T_IDENTIFIER, "b", 20);
+    REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "1", 22);
+    REQUIRE_TOKEN(TokenType::T_DIV, "/", 24);
+    REQUIRE_TOKEN(TokenType::T_SEMICOLON, ";", 25);
+    REQUIRE_TOKEN(TokenType::T_IDENTIFIER, "c", 33);
+    REQUIRE_ERRORS(1);
+    REQUIRE_ERROR(ParseErrorType::E_INVALID_CHARACTERS, "_", 0);
+)
+
+TEST_LEXER("/**/", REQUIRE_NO_ERRORS();)
+TEST_LEXER("//", REQUIRE_NO_ERRORS();)
+TEST_LEXER("//\n", REQUIRE_NO_ERRORS();)
+TEST_LEXER("///*", REQUIRE_NO_ERRORS();)
+TEST_LEXER("///**/", REQUIRE_NO_ERRORS();)
+TEST_LEXER("/*//*/", REQUIRE_NO_ERRORS();)
+TEST_LEXER("/* 1 // 2 */", REQUIRE_NO_ERRORS();)
+TEST_LEXER("/* \r\n \n \r */", REQUIRE_NO_ERRORS();)
+TEST_LEXER("\n/* \n */\n/* \n */\n", REQUIRE_NO_ERRORS();)
+
+TEST_LEXER("_/*_*/_//_\n_", \
+    REQUIRE_ERRORS(1);
+    REQUIRE_ERROR(ParseErrorType::E_INVALID_CHARACTERS, "___", 0);
+)
+
+TEST_LEXER("a_/*_*/_//_\n_", \
+    REQUIRE_TOKEN(TokenType::T_IDENTIFIER, "a_", 0);
+    REQUIRE_ERRORS(1);
+    REQUIRE_ERROR(ParseErrorType::E_INVALID_CHARACTERS, "__", 7);
+)
+
+TEST_LEXER("a _/*_*/b_//_\n_ c", \
+    REQUIRE_TOKEN(TokenType::T_IDENTIFIER, "a", 0);
+    REQUIRE_TOKEN(TokenType::T_IDENTIFIER, "b_", 8);
+    REQUIRE_TOKEN(TokenType::T_IDENTIFIER, "c", 16);
+    REQUIRE_ERRORS(2);
+    REQUIRE_ERROR(ParseErrorType::E_INVALID_CHARACTERS, "_", 2);
+    REQUIRE_ERROR(ParseErrorType::E_INVALID_CHARACTERS, "_", 14);
+)
+
+TEST_LEXER("1 /* 2 */ 3 /* 4 */ 5", \
+    REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "1", 0);
+    REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "3", 10);
+    REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "5", 20);
+    REQUIRE_NO_ERRORS();
+)
+
+TEST_LEXER("1 // 2 \n 3 // 4 \n 5", \
+    REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "1", 0);
+    REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "3", 9);
+    REQUIRE_TOKEN(TokenType::T_INTEGER_LITERAL, "5", 18);
+    REQUIRE_NO_ERRORS();
+)
+
+TEST_LEXER("/*", \
+    REQUIRE_ERRORS(1);
+    REQUIRE_ERROR(ParseErrorType::E_UNTERMINATED_COMMENT, "/*", 0);
+)
+
+TEST_LEXER("a /*", \
+    REQUIRE_TOKEN(TokenType::T_IDENTIFIER, "a", 0);
+    REQUIRE_ERRORS(1);
+    REQUIRE_ERROR(ParseErrorType::E_UNTERMINATED_COMMENT, "/*", 2);
+)
+
+TEST_LEXER("a /* a b c 1 2 3 \n // /*", \
+    REQUIRE_TOKEN(TokenType::T_IDENTIFIER, "a", 0);
+    REQUIRE_ERRORS(1);
+    REQUIRE_ERROR(ParseErrorType::E_UNTERMINATED_COMMENT, "/*", 2);
+)

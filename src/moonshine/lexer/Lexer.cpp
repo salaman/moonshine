@@ -85,8 +85,8 @@ Lexer::Lexer()
 
         // type atoms
         | (idToken & ws).token(TokenType::T_IDENTIFIER)
-        | integerToken.token(TokenType::T_INTEGER_LITERAL)
-        | floatToken.token(TokenType::T_FLOAT_LITERAL)
+        | (integerToken & ws).token(TokenType::T_INTEGER_LITERAL)
+        | (floatToken & ws).token(TokenType::T_FLOAT_LITERAL)
     );
 
     // convert nfa to dfa
@@ -124,6 +124,17 @@ Token* Lexer::getNextToken()
     std::string::size_type tokenEndIndex = 0u;
     // token's global position in stream
     unsigned long tokenPosition = 0u;
+    unsigned long errorStart = 0u;
+
+    auto reset = [&](bool& newToken) {
+        value.pop_back();
+        newToken = true;
+        lastTokenType = TokenType::T_NONE;
+        tokenStartIndex = 0u;
+        tokenEndIndex = 0u;
+        tokenPosition = 0u;
+        dfa_->reset();
+    };
 
     /*
      * token processing loop
@@ -143,6 +154,32 @@ Token* Lexer::getNextToken()
             if (!readNextChar()) {
                 // reached EOF
                 break;
+            }
+
+            // check for line and block comments
+            if (value.back() == '/') {
+                bool needsReset = character_ == '/' || character_ == '*';
+                bool terminatedComment = true;
+
+                if (character_ == '/') {
+                    // consume all input until a newline
+                    readUntil('\n');
+                } else if (character_ == '*') {
+                    // consume all input until a */
+                    do {
+                        readUntil('*');
+                    } while ((terminatedComment = readNextChar()) && character_ != '/');
+                }
+
+                if (!terminatedComment) {
+                    errors_.emplace_back(ParseErrorType::E_UNTERMINATED_COMMENT, "/*", tokenPosition);
+                }
+
+                // we've just processed a comment and should reset our state and find a new token
+                if (needsReset) {
+                    reset(newToken);
+                    continue;
+                }
             }
 
             // to enable matching of whitespace in the grammar (ie. for separating keywords and idents),
@@ -185,12 +222,16 @@ Token* Lexer::getNextToken()
 
             // if this token isn't at the beginning of the value buffer, it means we have some error input
             if (tokenStartIndex != 0) {
-                errors_.emplace_back(value.substr(0, tokenStartIndex), tokenPosition - tokenStartIndex);
+                errors_.emplace_back(ParseErrorType::E_INVALID_CHARACTERS, value.substr(0, tokenStartIndex), errorStart);
+                errorStart = 0u;
             }
 
             // store anything we've read past the end of the token into our input buffer for processing next call
             buffer_ += value.substr(tokenEndIndex);
             value.clear();
+        } else if (value.size() == 1) {
+            // store the start position of the error for future use since this is a new one
+            errorStart = position_;
         }
 
     }
@@ -198,7 +239,7 @@ Token* Lexer::getNextToken()
     // we broke out of the token parse loop without fully using up our value,
     // hence we reached eof without parsing a valid token
     if (!value.empty()) {
-        errors_.emplace_back(value, tokenPosition - tokenStartIndex);
+        errors_.emplace_back(ParseErrorType::E_INVALID_CHARACTERS, value, errorStart);
     }
 
     return token;
@@ -231,17 +272,20 @@ bool Lexer::eof()
     return buffer_.empty() && stream_->eof();
 }
 
-bool Lexer::isWhitespace(const char& c)
-{
-    return (' ' == c) || ('\n' == c) ||
-           ('\r' == c) || ('\t' == c) ||
-           ('\b' == c) || ('\v' == c) ||
-           ('\f' == c);
-}
-
 const std::vector<ParseError>& Lexer::getErrors() const
 {
     return errors_;
+}
+
+bool Lexer::readUntil(const char& c)
+{
+    bool ret;
+
+    do {
+        ret = readNextChar();
+    } while (ret && character_ != c);
+
+    return ret;
 }
 
 }

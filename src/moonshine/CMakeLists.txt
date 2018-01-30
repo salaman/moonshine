@@ -13,6 +13,7 @@ set(HEADER_FILES
         lexer/dfa/DFASimulator.h
         lexer/TokenType.h
         lexer/ParseError.h
+        lexer/Token.h
         )
 
 # source files

@@ -28,8 +28,8 @@ private:
     std::vector<ParseError> errors_;
 
     bool readNextChar();
+    bool readUntil(const char& c);
     bool eof();
-    bool isWhitespace(const char& c);
 };
 
 }
