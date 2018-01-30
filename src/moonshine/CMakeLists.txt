@@ -6,7 +6,6 @@ set(CMAKE_CXX_STANDARD 11)
 
 # header files
 set(HEADER_FILES
-        Log.h
         lexer/nfa/State.h
         lexer/nfa/Atom.h
         lexer/dfa/DFA.h
