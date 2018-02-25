@@ -58,7 +58,7 @@ struct Production
 class Grammar
 {
 public:
-    Grammar(const char* grammarFileName, const char* tableFileName);
+    Grammar(const char* grammarFileName, const char* tableFileName, const char* firstFileName, const char* followFileName);
     std::string tokenName(const GrammarToken& token) const;
     GrammarToken startToken() const;
 
@@ -79,8 +79,21 @@ private:
      */
     std::map<std::string, int> nonTerminals_;
 
+    /**
+     * Map of non-terminals to their first sets
+     */
     std::map<int, std::vector<GrammarToken>> first_;
+
+    /**
+     * Map of non-terminals to their follow sets
+     */
     std::map<int, std::vector<GrammarToken>> follow_;
+
+    /**
+     * Nullable flag for productions
+     *
+     * Index corresponds to respective production in productions_ field. If true, ε ∈ FIRST(productions_[id]).
+     */
     std::vector<bool> nullable_;
 
     /**
@@ -94,6 +107,10 @@ private:
     nlohmann::json table_;
 
     void createTokenLookup();
+    void parseGrammarFile(const char* fileName);
+    void parseTableFile(const char* fileName);
+    void parseFirstFile(const char* fileName);
+    void parseFollowFile(const char* fileName);
 };
 
 }}

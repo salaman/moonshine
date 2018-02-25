@@ -25,7 +25,7 @@ int main(int argc, const char** argv)
     std::istringstream stream(input);
     lex.startLexing(&stream);
 
-    syntax::Grammar grammar("grammar.txt",  "table.json");
+    syntax::Grammar grammar("grammar.txt",  "table.json", "first.txt", "follow.txt");
     std::cout << std::endl;
 
     std::cout << "Parsing: " << input << std::endl;

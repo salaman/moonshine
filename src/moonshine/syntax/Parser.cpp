@@ -20,12 +20,8 @@ bool Parser::parse(Lexer* lex)
 
     Token* a = lex->getNextToken();
 
-    //std::cout << std::setw(9) << std::left << "Input"
-    //          << "Production" << std::endl;
-
     while (a != nullptr && stack_.back().type != GrammarTokenType::END) {
         const GrammarToken x = stack_.back();
-
 
         if (x.type == GrammarTokenType::TERMINAL) {
             if (x.value == static_cast<const int>(a->type)) {
@@ -44,15 +40,6 @@ bool Parser::parse(Lexer* lex)
             printSentencialForm(x, p);
 
             if (!p.isError()) {
-
-                //std::cout << std::setw(9) << std::left << TokenName[a->type]
-                //          << std::setw(17) << grammar_.tokenName(x) << " -> ";
-                //for (const auto& i : p.rhs) std::cout << grammar_.tokenName(i) << " ";
-                //if (p.rhs.empty()) std::cout << "ε";
-                //std::cout << std::endl;
-
-                //printProduction(x, p);
-
                 stack_.pop_back();
                 inverseRHSMultiplePush(p.rhs);
             } else {
