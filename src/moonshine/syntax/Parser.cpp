@@ -47,7 +47,6 @@ bool Parser::parse(Lexer* lex)
                 error = true;
                 throw std::runtime_error("err 2");
             }
-            std::cout << std::endl;
         }
 
     }
@@ -75,27 +74,37 @@ void Parser::inverseRHSMultiplePush(const std::vector<GrammarToken>& tokens)
 
 void Parser::printSentencialForm()
 {
-    std::ostringstream oss;
-
     for (const auto& t : parsedTokens_) {
-        oss << TokenName[t->type] << ' ';
+        std::cout << TokenName[t->type] << ' ';
     }
 
-    std::for_each(stack_.rbegin(), --stack_.rend(), [this, &oss](const GrammarToken& t) {
-        oss << grammar_.tokenName(t) << ' ';
-    });
+    bool first = true;
 
-    std::cout << std::setw(80) << std::left << oss.str();
+    std::for_each(stack_.rbegin(), --stack_.rend(), [this, &first](const GrammarToken& t) {
+        if (first) {
+            std::cout << "\033[4m";
+            first = false;
+        }
+
+        std::cout << grammar_.tokenName(t) << "\033[0m ";
+    });
 }
 
 void Parser::printSentencialForm(const GrammarToken& token, const Production& production)
 {
     printSentencialForm();
 
-    std::cout << grammar_.tokenName(token) << " -> ";
+    std::cout << std::endl << "↳ " << grammar_.tokenName(token) << " → ";
 
-    for (const auto& i : production.rhs) std::cout << grammar_.tokenName(i) << " ";
-    if (production.rhs.empty()) std::cout << "ε";
+    for (const auto& i : production.rhs) {
+        std::cout << grammar_.tokenName(i) << " ";
+    }
+
+    if (production.rhs.empty()) {
+        std::cout << "\033[34mε\033[0m";
+    }
+
+    std::cout << std::endl;
 }
 
 }}

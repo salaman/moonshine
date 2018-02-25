@@ -72,11 +72,11 @@ const Production Grammar::operator()(const GrammarToken& nonTerminal, const Toke
 std::string Grammar::tokenName(const GrammarToken& token) const
 {
     if (token.type == GrammarTokenType::TERMINAL) {
-        return TokenName[static_cast<TokenType>(token.value)];
+        return std::string("") + TokenName[static_cast<TokenType>(token.value)] + std::string("");
     } else if (token.type == GrammarTokenType::NON_TERMINAL) {
-        return std::find_if(nonTerminals_.begin(), nonTerminals_.end(), [&token](const std::map<std::string, int>::value_type& i) {
+        return std::string("\033[31m") + std::find_if(nonTerminals_.begin(), nonTerminals_.end(), [&token](const std::map<std::string, int>::value_type& i) {
             return i.second == token.value;
-        })->first;
+        })->first + std::string("\033[0m");
     } else if (token.type == GrammarTokenType::END) {
         return "$";
     }
@@ -136,9 +136,9 @@ void Grammar::parseGrammarFile(const char* fileName)
     // mark read productions as non-nullable (temporarily)
     nullable_.insert(nullable_.begin(), static_cast<size_t>(nonTerminalId), false);
 
-    for (const auto& i : nonTerminals_) {
-        std::cout << i.second << ": " << i.first << std::endl;
-    }
+    //for (const auto& i : nonTerminals_) {
+    //    std::cout << i.second << ": " << i.first << std::endl;
+    //}
 
     std::cout << "Parsed " << nonTerminals_.size() << " non-terminals" << std::endl;
 
@@ -171,7 +171,7 @@ void Grammar::parseGrammarFile(const char* fileName)
 
         std::vector<GrammarToken> tokens;
 
-        std::cout << nonterminal << " " << temp << " ";
+        //std::cout << nonterminal << " " << temp << " ";
 
         while (iss >> temp) {
 
@@ -186,7 +186,7 @@ void Grammar::parseGrammarFile(const char* fileName)
                 throw std::runtime_error(std::string("Invalid token encountered: ") + temp);
             }
 
-            std::cout << (isEpsilon ? "ε" : temp) << " ";
+            //std::cout << (isEpsilon ? "ε" : temp) << " ";
 
             if (isEpsilon) {
                 continue;
@@ -199,7 +199,7 @@ void Grammar::parseGrammarFile(const char* fileName)
 
         productions_.emplace_back(tokens);
 
-        std::cout << std::endl;
+        //std::cout << std::endl;
     }
 
     std::cout << "Parsed " << productions_.size() - 1 << " productions" << std::endl;
