@@ -24,6 +24,10 @@ set(SOURCE_FILES
         lexer/dfa/DFA.cpp
         lexer/dfa/DFASimulator.cpp
         lexer/TokenType.cpp
+        syntax/Grammar.cpp
+        syntax/Grammar.h
+        syntax/Parser.cpp
+        syntax/Parser.h
         )
 
 # define target

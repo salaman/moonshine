@@ -12,3 +12,4 @@ endif ()
 
 add_subdirectory(moonshine)
 add_subdirectory(a1_driver)
+add_subdirectory(a2_driver)

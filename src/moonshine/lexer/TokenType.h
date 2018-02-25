@@ -4,7 +4,7 @@
 
 namespace moonshine {
 
-enum class TokenType
+enum class TokenType : size_t
 {
     T_NONE = 0,
 
@@ -64,9 +64,9 @@ enum class TokenType
     T_CLOSE_BRACKET,
 
     // comments
-    T_COMMENT,
-    T_OPEN_COMMENT,
-    T_CLOSE_COMMENT,
+    //T_COMMENT,
+    //T_OPEN_COMMENT,
+    //T_CLOSE_COMMENT,
 
     TokenTypeCount
 };
