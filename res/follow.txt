@@ -1,0 +1,61 @@
+prog 	$
+classDecl 	class, program, id, float, int
+classInheritList 	{
+classInheritCont 	{
+classDeclList 	program, id, float, int
+classBody 	;
+classProps 	}
+classPropHead 	(, ;, [
+classPropTail 	}
+funcDecl 	id, float, int, }
+funcDeclList 	}
+funcHead 	{
+funcScope 	(
+funcDef 	id, float, int, program
+funcDefList 	program
+funcBody 	;
+funcBodyInner 	}
+funcBodyStat 	}
+funcBodyDecl 	}
+varDeclTail 	float, int, id, for, if, get, put, return, }
+construct 	id, for, if, get, put, return, }, ;, else
+statement 	id, for, if, get, put, return, ;, else, }
+statementList 	}
+assignStat 	;, )
+assignStatTail 	;, )
+statBlock 	;, else
+expr 	,, ), ;
+exprTail 	,, ), ;
+relExpr 	;
+arithExpr 	], ), eq, geq, gt, leq, lt, neq, ;, ,
+arithExprHead 	+, -, or, ], ), eq, geq, gt, leq, lt, neq, ;, ,
+arithExprTail 	], ), eq, geq, gt, leq, lt, neq, ;, ,
+sign 	(, floatNum, intNum, not, id, +, -
+term 	+, -, or, ], ), eq, geq, gt, leq, lt, neq, ;, ,
+termNR 	+, -, or, ], ), eq, geq, gt, leq, lt, neq, ;, ,
+factor 	*, /, and, +, -, or, ], ), eq, geq, gt, leq, lt, neq, ;, ,
+varOrFunc 	*, /, and, +, -, or, ], ), eq, geq, gt, leq, lt, neq, ;, ,
+varOrFuncEval 	., *, /, and, +, -, or, ], ), eq, geq, gt, leq, lt, neq, ;, ,
+varOrFuncInner 	*, /, and, +, -, or, ], ), eq, geq, gt, leq, lt, neq, ;, ,
+variable 	=, )
+variableHead 	(, [, ., id, =, ), *, /, and, +, -, or, ], eq, geq, gt, leq, lt, neq, ;, ,
+variableCont 	=, )
+variableTrap 	=, )
+variableTail 	=, ), ., *, /, and, +, -, or, ], eq, geq, gt, leq, lt, neq, ;, ,
+functionCallTail 	., =, ), *, /, and, +, -, or, ], eq, geq, gt, leq, lt, neq, ;, ,
+indice 	[, =, ), ., *, /, and, +, -, or, ], eq, geq, gt, leq, lt, neq, ;, ,
+indiceList 	=, ), ., *, /, and, +, -, or, ], eq, geq, gt, leq, lt, neq, ;, ,
+arraySize 	[, ,, ;, )
+arraySizeList 	,, ;, )
+type 	id
+primitiveType 	id
+fParams 	)
+aParams 	)
+fParamsTail 	,, )
+fParamsTailList 	)
+aParamsTail 	,, )
+aParamsTailList 	)
+assignOp 	(, floatNum, intNum, not, id, +, -
+relOp 	(, floatNum, intNum, not, id, +, -
+addOp 	(, floatNum, intNum, not, id, +, -
+multOp 	(, floatNum, intNum, not, id, +, -

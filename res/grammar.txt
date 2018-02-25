@@ -1,0 +1,111 @@
+prog             -> classDeclList funcDefList program funcBody ;
+classDecl        -> class id classInheritList classBody ;
+classInheritList -> : id classInheritCont
+classInheritList -> EPSILON
+classInheritCont -> , id classInheritCont
+classInheritCont -> EPSILON
+classDeclList    -> classDecl classDeclList
+classDeclList    -> EPSILON
+classBody        -> { classProps }
+classProps       -> classPropHead classPropTail
+classProps       -> EPSILON
+classPropHead    -> type id
+classPropTail    -> ( fParams ) ; funcDeclList
+classPropTail    -> arraySizeList ; classProps
+funcDecl         -> type id ( fParams ) ;
+funcDeclList     -> funcDecl funcDeclList
+funcDeclList     -> EPSILON
+funcHead         -> type id funcScope ( fParams )
+funcScope        -> sr id
+funcScope        -> EPSILON
+funcDef          -> funcHead funcBody ;
+funcDefList      -> funcDef funcDefList
+funcDefList      -> EPSILON
+funcBody         -> { funcBodyInner }
+funcBodyInner    -> primitiveType varDeclTail funcBodyInner
+funcBodyInner    -> construct funcBodyStat
+funcBodyInner    -> variableHead funcBodyDecl
+funcBodyInner    -> EPSILON
+funcBodyStat     -> statementList
+funcBodyDecl     -> variableCont assignStatTail ; funcBodyStat
+funcBodyDecl     -> varDeclTail funcBodyInner
+varDeclTail      -> id arraySizeList ;
+construct        -> for ( type id assignStatTail ; relExpr ; assignStat ) statBlock ;
+construct        -> if ( expr ) then statBlock else statBlock ;
+construct        -> get ( variable ) ;
+construct        -> put ( expr ) ;
+construct        -> return ( expr ) ;
+statement        -> assignStat ;
+statement        -> construct
+statementList    -> statement statementList
+statementList    -> EPSILON
+assignStat       -> variable assignStatTail
+assignStatTail   -> assignOp expr
+statBlock        -> { statementList }
+statBlock        -> statement
+statBlock        -> EPSILON
+expr             -> arithExpr exprTail
+exprTail         -> relOp arithExpr
+exprTail         -> EPSILON
+relExpr          -> arithExpr relOp arithExpr
+arithExpr        -> arithExprHead arithExprTail
+arithExprHead    -> term
+arithExprTail    -> addOp term arithExprTail
+arithExprTail    -> EPSILON
+sign             -> +
+sign             -> -
+term             -> factor termNR
+termNR           -> multOp factor termNR
+termNR           -> EPSILON
+factor           -> ( arithExpr )
+factor           -> floatNum
+factor           -> intNum
+factor           -> not factor
+factor           -> varOrFunc
+factor           -> sign factor
+varOrFunc        -> variableHead varOrFuncEval varOrFuncInner
+varOrFuncEval    -> functionCallTail
+varOrFuncEval    -> variableTail
+varOrFuncInner   -> . varOrFunc
+varOrFuncInner   -> EPSILON
+variable         -> variableHead variableCont
+variableHead     -> id
+variableCont     -> functionCallTail variableTrap
+variableCont     -> variableTail
+variableTrap     -> . variableHead variableCont
+variableTrap     -> EPSILON
+variableTail     -> indiceList
+functionCallTail -> ( aParams )
+indice           -> [ arithExpr ]
+indiceList       -> indice indiceList
+indiceList       -> EPSILON
+arraySize        -> [ intNum ]
+arraySizeList    -> arraySize arraySizeList
+arraySizeList    -> EPSILON
+type             -> id
+type             -> primitiveType
+primitiveType    -> float
+primitiveType    -> int
+fParams          -> type id arraySizeList fParamsTailList
+fParams          -> EPSILON
+aParams          -> expr aParamsTailList
+aParams          -> EPSILON
+fParamsTail      -> , type id arraySizeList
+fParamsTailList  -> fParamsTail fParamsTailList
+fParamsTailList  -> EPSILON
+aParamsTail      -> , expr
+aParamsTailList  -> aParamsTail aParamsTailList
+aParamsTailList  -> EPSILON
+assignOp         -> =
+relOp            -> eq
+relOp            -> geq
+relOp            -> gt
+relOp            -> leq
+relOp            -> lt
+relOp            -> neq
+addOp            -> +
+addOp            -> -
+addOp            -> or
+multOp           -> *
+multOp           -> /
+multOp           -> and

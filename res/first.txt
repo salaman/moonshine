@@ -1,0 +1,101 @@
+program 	program
+; 	;
+class 	class
+id 	id
+: 	:
+ε 	ε
+, 	,
+{ 	{
+} 	}
+( 	(
+) 	)
+sr 	sr
+for 	for
+if 	if
+then 	then
+else 	else
+get 	get
+put 	put
+return 	return
++ 	+
+- 	-
+floatNum 	floatNum
+intNum 	intNum
+not 	not
+. 	.
+[ 	[
+] 	]
+float 	float
+int 	int
+= 	=
+eq 	eq
+geq 	geq
+gt 	gt
+leq 	leq
+lt 	lt
+neq 	neq
+or 	or
+* 	*
+/ 	/
+and 	and
+prog 	program, ε, class, id, float, int
+classDecl 	class
+classInheritList 	:, ε
+classInheritCont 	,, ε
+classDeclList 	ε, class
+classBody 	{
+classProps 	ε, id, float, int
+classPropTail 	(, ;, ε, [
+funcDeclList 	ε, id, float, int
+funcScope 	sr, ε
+funcDefList 	ε, id, float, int
+funcBody 	{
+funcBodyInner 	ε, float, int, id, for, if, get, put, return
+varDeclTail 	id
+construct 	for, if, get, put, return
+statementList 	ε, id, for, if, get, put, return
+statBlock 	{, ε, id, for, if, get, put, return
+exprTail 	ε, eq, geq, gt, leq, lt, neq
+arithExprTail 	ε, +, -, or
+sign 	+, -
+termNR 	ε, *, /, and
+factor 	(, floatNum, intNum, not, id, +, -
+varOrFuncInner 	., ε
+variableHead 	id
+variableTrap 	., ε
+functionCallTail 	(
+indice 	[
+indiceList 	ε, [
+arraySize 	[
+arraySizeList 	ε, [
+type 	id, float, int
+primitiveType 	float, int
+fParams 	ε, id, float, int
+aParams 	ε, (, floatNum, intNum, not, id, +, -
+fParamsTail 	,
+fParamsTailList 	ε, ,
+aParamsTail 	,
+aParamsTailList 	ε, ,
+assignOp 	=
+relOp 	eq, geq, gt, leq, lt, neq
+addOp 	+, -, or
+multOp 	*, /, and
+assignStatTail 	=
+varOrFunc 	id
+varOrFuncEval 	(, ε, [
+variable 	id
+variableCont 	(, ε, [
+classPropHead 	id, float, int
+funcDecl 	id, float, int
+funcHead 	id, float, int
+assignStat 	id
+variableTail 	ε, [
+funcDef 	id, float, int
+statement 	id, for, if, get, put, return
+funcBodyDecl 	(, ε, [, id, =
+term 	(, floatNum, intNum, not, id, +, -
+arithExprHead 	(, floatNum, intNum, not, id, +, -
+funcBodyStat 	ε, id, for, if, get, put, return
+arithExpr 	(, floatNum, intNum, not, id, +, -
+expr 	(, floatNum, intNum, not, id, +, -
+relExpr 	(, floatNum, intNum, not, id, +, -
