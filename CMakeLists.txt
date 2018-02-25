@@ -12,6 +12,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 # external dependencies
 add_subdirectory(vendor/catch EXCLUDE_FROM_ALL)
+add_subdirectory(vendor/json EXCLUDE_FROM_ALL)
 
 # output locations
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)

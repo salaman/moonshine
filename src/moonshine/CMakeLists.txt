@@ -30,3 +30,6 @@ set(SOURCE_FILES
 include_directories(${ROOT_INCLUDE_DIR})
 add_library(${TARGET} STATIC ${SOURCE_FILES} ${HEADER_FILES})
 target_include_directories(${TARGET} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
+
+# link additional libs
+target_link_libraries(${TARGET} json)
