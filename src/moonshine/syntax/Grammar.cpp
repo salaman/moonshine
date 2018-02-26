@@ -94,6 +94,12 @@ std::string Grammar::tokenName(const GrammarToken& token) const
         })->first + std::string("\033[0m");
     } else if (token.type == GrammarTokenType::END) {
         return "$";
+    } else if (token.type == GrammarTokenType::SEMANTIC) {
+        if (!token.name.empty()) {
+            return "\033[33m@" + token.name + "\033[0m";
+        } else {
+            return "\033[33m@" + std::to_string(token.value) + ',' + std::to_string(token.parent) + "\033[0m";
+        }
     }
 
     return {};
