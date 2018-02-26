@@ -65,7 +65,10 @@ std::unique_ptr<ast::Node> Parser::parse(Lexer* lex)
 
             stack_.pop_back();
 
-            if (x.value == 0) {
+            if (x.value == -1) {
+                // pop
+                semanticStack_.pop_back();
+            } else if (x.value == 0) {
                 // makeNode() - semantic action to create a leaf node
                 semanticStack_.emplace_back(ast::Node::makeNode(x.name, a));
             } else if (x.parent == 0) {

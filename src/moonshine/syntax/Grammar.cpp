@@ -221,7 +221,10 @@ void Grammar::parseGrammarFile(const char* fileName)
                 auto delim = temp.find(',');
                 auto isNumeric = std::isdigit(temp.front());
 
-                if (delim == std::string::npos && !isNumeric) {
+                if (temp.front() == '!') {
+                    // pop operation
+                    tokens.emplace_back(GrammarTokenType::SEMANTIC, -1);
+                } else if (delim == std::string::npos && !isNumeric) {
                     // makeNode operation
                     // @name - name of AST leaf node
                     tokens.emplace_back(GrammarTokenType::SEMANTIC);
