@@ -30,8 +30,12 @@ int main(int argc, const char** argv)
 
     std::cout << "Parsing: " << input << std::endl;
     std::cout << std::endl;
-    syntax::Parser parser(grammar);
-    bool success = parser.parse(&lex);
 
-    return !success;
+    syntax::Parser parser(grammar);
+
+    std::unique_ptr<ast::Node> astRoot;
+
+    astRoot = parser.parse(&lex);
+
+    return astRoot == nullptr;
 }

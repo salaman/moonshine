@@ -11,7 +11,7 @@ Parser::Parser(const Grammar& grammar)
 {
 }
 
-bool Parser::parse(Lexer* lex)
+std::unique_ptr<ast::Node> Parser::parse(Lexer* lex)
 {
     bool error = false;
 
@@ -20,10 +20,10 @@ bool Parser::parse(Lexer* lex)
 
     std::shared_ptr<Token> a(lex->getNextToken());
 
-    while (a != nullptr && stack_.back().type != GrammarTokenType::END) {
+    while (stack_.back().type != GrammarTokenType::END) {
         const GrammarToken x = stack_.back();
 
-        if (x.type == GrammarTokenType::TERMINAL) {
+        if (a != nullptr && x.type == GrammarTokenType::TERMINAL) {
 
             /*
              * Terminal symbol
@@ -36,6 +36,23 @@ bool Parser::parse(Lexer* lex)
                 a.reset(lex->getNextToken());
             } else {
                 // skipErrors()
+            }
+
+        } if (a != nullptr && x.type == GrammarTokenType::NON_TERMINAL) {
+
+            /*
+             * Non-terminal symbol
+             */
+
+            const Production p = grammar_(x, a->type);
+
+            printSentencialForm(x, p);
+            printSemanticStack();
+
+            if (!p.isError()) {
+                stack_.pop_back();
+                inverseRHSMultiplePush(p.rhs);
+            } else {
                 error = true;
                 throw std::runtime_error("err 1");
             }
@@ -92,26 +109,9 @@ bool Parser::parse(Lexer* lex)
                 semanticStack_.push_back(std::move(parent));
             }
 
-        } else {
-
-            /*
-             * Non-terminal symbol
-             */
-
-            const Production p = grammar_(x, a->type);
-
-            printSentencialForm(x, p);
-            printSemanticStack();
-
-            if (!p.isError()) {
-                stack_.pop_back();
-                inverseRHSMultiplePush(p.rhs);
-            } else {
                 // skipErrors() ; error = true
                 error = true;
                 throw std::runtime_error("err 2");
-            }
-
         }
 
     }
@@ -119,10 +119,13 @@ bool Parser::parse(Lexer* lex)
     printSentencialForm();
 
     if (error || stack_.size() != 1 || stack_.back().type != GrammarTokenType::END) {
-        return false;
+        return nullptr;
     }
 
-    return true;
+    std::unique_ptr<ast::Node> node = std::move(semanticStack_.back());
+    semanticStack_.pop_back();
+
+    return node;
 }
 
 void Parser::inverseRHSMultiplePush(const std::vector<GrammarToken>& tokens)

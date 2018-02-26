@@ -15,7 +15,7 @@ class Parser
 public:
     explicit Parser(const Grammar& grammar);
 
-    bool parse(Lexer* lex);
+    std::unique_ptr<ast::Node> parse(Lexer* lex);
     void inverseRHSMultiplePush(const std::vector<GrammarToken>& tokens);
 private:
     const Grammar grammar_;
