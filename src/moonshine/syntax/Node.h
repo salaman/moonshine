@@ -54,48 +54,54 @@ protected:
 };
 
 #define AST_LEAF(NAME) \
-    class NAME : public Leaf \
-    { \
-    public: \
-        explicit NAME(std::shared_ptr<Token>& token) : Leaf(token) {} \
-        inline const char* name() const override { return #NAME; }; \
-    }
+class NAME : public Leaf \
+{ \
+public: \
+    explicit NAME(std::shared_ptr<Token>& token) : Leaf(token) {} \
+    inline const char* name() const override { return #NAME; }; \
+}
 
 #define AST(NAME) \
-    class NAME : public Node \
-    { \
-    public: \
-        inline const char* name() const override { return #NAME; }; \
-    }
+class NAME : public Node \
+{ \
+public: \
+    inline const char* name() const override { return #NAME; }; \
+}
 
-AST_LEAF(RelOp);
+AST(nul);
+AST_LEAF(relOp);
+AST_LEAF(addOp);
+AST_LEAF(multOp);
+AST_LEAF(num);
+AST_LEAF(id);
+AST_LEAF(type);
+AST_LEAF(sign);
+AST(getStat);
+AST(putStat);
+AST(returnStat);
+AST(forStat);
+AST(notFactor);
+AST(ifStat);
+AST(assignStat);
+AST(statBlock);
+AST(prog);
+AST(classList);
+AST(funcDefList);
+AST(classDecl);
+AST(funcDef);
+AST(inherList);
+AST(membList);
+AST(varDecl);
+AST(fparamList);
+AST(dimList);
+AST(fparam);
+AST(var);
+AST(dataMember);
+AST(fCall);
+AST(indexList);
+AST(aParams);
 
-AST_LEAF(AddOp);
-
-AST_LEAF(MultOp);
-
-AST_LEAF(Num);
-
-AST_LEAF(Id);
-
-AST_LEAF(Type);
-
-AST_LEAF(Sign);
-
-AST(GetStat);
-
-AST(PutStat);
-
-AST(ReturnStat);
-
-AST(ForStat);
-
-AST(Not);
-
-AST(IfStat);
-
-AST(AssignStat);
-
-AST(StatBlock);
+#undef AST
+#undef AST_LEAF
 
 }}

@@ -56,75 +56,49 @@ std::unique_ptr<Node> Node::makeNode(const std::string& name, std::shared_ptr<To
 {
     Node* node = nullptr;
 
-    if (name == "addOp") {
-        node = new AddOp(op);
-    } else if (name == "relOp") {
-        node = new RelOp(op);
-    } else if (name == "num") {
-        node = new Num(op);
-    } else if (name == "id") {
-        node = new Id(op);
-    } else if (name == "multOp") {
-        node = new MultOp(op);
-    } else if (name == "ifStat") {
-        node = new IfStat();
-    } else if (name == "assignStat") {
-        node = new AssignStat();
-    } else if (name == "not") {
-        node = new Not();
-    } else if (name == "getStat") {
-        node = new GetStat();
-    } else if (name == "putStat") {
-        node = new PutStat();
-    } else if (name == "forStat") {
-        node = new ForStat();
-    } else if (name == "returnStat") {
-        node = new ReturnStat();
-    } else if (name == "sign") {
-        node = new Sign(op);
-    } else if (name == "statBlock") {
-        node = new StatBlock();
-    } else {
-        throw std::runtime_error(std::string("Unexpected token encountered while creating AST node: ") + TokenName[op->type]);
-    }
+    // lazy man's factory construction feat. macro abuse
+    #define AST(NAME) if (name == #NAME) { node = new NAME(); goto found; }
+    #define AST_LEAF(NAME) if (name == #NAME) { node = new NAME(op); goto found; }
 
-    //switch (op->type) {
-    //    case TokenType::T_PLUS:
-    //    case TokenType::T_MINUS:
-    //    case TokenType::T_OR:
-    //        node = new AddOp(op);
-    //        break;
-    //    case TokenType::T_MUL:
-    //    case TokenType::T_DIV:
-    //    case TokenType::T_AND:
-    //        node = new MultOp(op);
-    //        break;
-    //    case TokenType::T_IS_EQUAL:
-    //    case TokenType::T_IS_NOT_EQUAL:
-    //    case TokenType::T_IS_SMALLER:
-    //    case TokenType::T_IS_SMALLER_OR_EQUAL:
-    //    case TokenType::T_IS_GREATER:
-    //    case TokenType::T_IS_GREATER_OR_EQUAL:
-    //        node = new RelOp(op);
-    //        break;
-    //    case TokenType::T_IDENTIFIER:
-    //        node = new Id(op);
-    //        break;
-    //    case TokenType::T_INTEGER_LITERAL:
-    //    case TokenType::T_FLOAT_LITERAL:
-    //        node = new Num(op);
-    //        break;
-    //    case TokenType::T_IF:
-    //        node = new IfStat(op);
-    //        break;
-    //    case TokenType::T_INT:
-    //    case TokenType::T_FLOAT:
-    //        node = new IfStat(op);
-    //        break;
-    //    default:
-    //        throw std::runtime_error(std::string("Unexpected token encountered while creating AST node: ") + TokenName[op->type]);
-    //}
+    AST(nul);
+    AST_LEAF(relOp);
+    AST_LEAF(addOp);
+    AST_LEAF(multOp);
+    AST_LEAF(num);
+    AST_LEAF(id);
+    AST_LEAF(type);
+    AST_LEAF(sign);
+    AST(getStat);
+    AST(putStat);
+    AST(returnStat);
+    AST(forStat);
+    AST(notFactor);
+    AST(ifStat);
+    AST(assignStat);
+    AST(statBlock);
+    AST(prog);
+    AST(classList);
+    AST(funcDefList);
+    AST(classDecl);
+    AST(funcDef);
+    AST(inherList);
+    AST(membList);
+    AST(varDecl);
+    AST(fparamList);
+    AST(dimList);
+    AST(fparam);
+    AST(var);
+    AST(dataMember);
+    AST(fCall);
+    AST(indexList);
+    AST(aParams);
 
+    #undef AST
+    #undef AST_LEAF
+
+    throw std::runtime_error(std::string("Unexpected token encountered while creating AST node: ") + name);
+
+found:
     node->leftmostSib_ = node;
 
     return std::unique_ptr<Node>{node};
