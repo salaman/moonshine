@@ -1,19 +1,19 @@
 prog             -> @prog @classList classDeclList @funcDefList funcDefList program funcBody @4,1 ;
-classDecl        -> class id classInheritList classBody ;
-classInheritList -> : id classInheritCont
+classDecl        -> @classDecl class @id id @inherList classInheritList classBody ; @4.1
+classInheritList -> : @id id @2,1 classInheritCont
 classInheritList -> EPSILON
-classInheritCont -> , id classInheritCont
+classInheritCont -> , @id id @2,1 classInheritCont
 classInheritCont -> EPSILON
 classDeclList    -> classDecl @2,1 classDeclList
 classDeclList    -> EPSILON
-classBody        -> { classProps }
+classBody        -> @membList { classProps }
 classProps       -> classPropHead classPropTail
 classProps       -> EPSILON
-classPropHead    -> type id
-classPropTail    -> ( fParams ) ; funcDeclList
-classPropTail    -> @dimList arraySizeList ; classProps
-funcDecl         -> type id ( fParams ) ;
-funcDeclList     -> funcDecl funcDeclList
+classPropHead    -> type @id id
+classPropTail    -> @funcDecl ( @fparamList fParams ) ; @4,3 @2,1 funcDeclList
+classPropTail    -> @varDecl @dimList arraySizeList ; @4,3 @2,1 classProps
+funcDecl         -> @funcDecl type @id id ( @fparamList fParams ) ; @4,1
+funcDeclList     -> funcDecl @2,1 funcDeclList
 funcDeclList     -> EPSILON
 funcHead         -> type @id id funcScope ( @fparamList fParams ) @5,1
 funcScope        -> sr @id id
@@ -27,10 +27,10 @@ funcBodyInner    -> construct @2,1 funcBodyStat
 funcBodyInner    -> @var variableHead funcBodyDecl
 funcBodyInner    -> EPSILON
 funcBodyStat     -> statementList
-funcBodyDecl     -> variableCont @assignStat assignStatTail @3,2 @2,1 ; funcBodyStat
-funcBodyDecl     -> @varDecl varDeclTail @4,2 @2,1 funcBodyInner
+funcBodyDecl     -> variableCont @assignStat assignStatTail ; @3,2 @2,1 funcBodyStat
+funcBodyDecl     -> @! @varDecl varDeclTail @4,2 @2,1 funcBodyInner
 varDeclTail      -> variableHead @dimList arraySizeList ;
-construct        -> @forStat for ( type id assignStatTail ; relExpr ; assignStat ) statBlock ;
+construct        -> @forStat for ( type @id id assignStatTail ; relExpr ; assignStat ) statBlock ; @7,1
 construct        -> @ifStat if ( expr ) then statBlock else statBlock ; @4,1
 construct        -> @getStat get ( variable ) ; @2,1
 construct        -> @putStat put ( expr ) ; @2,1
@@ -45,9 +45,9 @@ statBlock        -> @statBlock { statementList }
 statBlock        -> @statBlock statement @2,1
 statBlock        -> @statBlock EPSILON
 expr             -> arithExpr exprTail
-exprTail         -> relOp arithExpr @2,1
+exprTail         -> relOp arithExpr @3,2
 exprTail         -> EPSILON
-relExpr          -> arithExpr relOp arithExpr
+relExpr          -> arithExpr relOp arithExpr @3,2
 arithExpr        -> arithExprHead arithExprTail
 arithExprHead    -> term
 arithExprTail    -> addOp term @3,2 arithExprTail
@@ -87,7 +87,7 @@ type             -> @type id
 type             -> primitiveType
 primitiveType    -> @type float
 primitiveType    -> @type int
-fParams          -> @fparam type id @dimList arraySizeList @4,1 @2,1 fParamsTailList
+fParams          -> @fparam type @id id @dimList arraySizeList @4,1 @2,1 fParamsTailList
 fParams          -> EPSILON
 aParams          -> @aParams expr @2,1 aParamsTailList
 aParams          -> @aParams EPSILON
