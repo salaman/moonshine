@@ -52,10 +52,24 @@ const Production Grammar::operator()(const GrammarToken& nonTerminal, const Toke
             for (json::iterator it = ++nonTerminalRow.begin(); it != nonTerminalRow.end(); ++it) {
                 // ignore error entries
                 if (*it < productions_.size()) {
+                    const auto& p = productions_[*it];
+
                     // check for ε ∈ FIRST(B)
-                    if (productions_[*it].rhs.empty()
-                        || (productions_[*it].rhs.front().type == GrammarTokenType::NON_TERMINAL && nullable_[productions_[*it].rhs.front().value])) {
-                        return productions_[*it];
+                    if (p.rhs.empty()) {
+                        // this is an epsilon production! use it
+                        return p;
+                    } else {
+                        // find first non-terminal in production
+                        auto nt = std::find_if(p.rhs.begin(), p.rhs.end(), [](const GrammarToken& t) {
+                            return t.type == GrammarTokenType::NON_TERMINAL;
+                        });
+
+                        // if we found a non-terminal and it's nullable, use this production
+                        if (nt != p.rhs.end() && nullable_[nt->value]) {
+                            return p;
+                        }
+
+                        // no non-terminals, this isn't a nullable production... continue search
                     }
                 }
             }
