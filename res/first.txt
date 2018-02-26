@@ -51,7 +51,6 @@ funcScope 	sr, ε
 funcDefList 	ε, id, float, int
 funcBody 	{
 funcBodyInner 	ε, float, int, id, for, if, get, put, return
-varDeclTail 	id
 construct 	for, if, get, put, return
 statementList 	ε, id, for, if, get, put, return
 statBlock 	{, ε, id, for, if, get, put, return
@@ -62,7 +61,8 @@ termNR 	ε, *, /, and
 factor 	(, floatNum, intNum, not, id, +, -
 varOrFuncInner 	., ε
 variableHead 	id
-variableTrap 	., ε
+variableCont2 	., ε
+variableTrap 	.
 functionCallTail 	(
 indice 	[
 indiceList 	ε, [
@@ -80,11 +80,10 @@ assignOp 	=
 relOp 	eq, geq, gt, leq, lt, neq
 addOp 	+, -, or
 multOp 	*, /, and
+varDeclTail 	id
 assignStatTail 	=
 varOrFunc 	id
-varOrFuncEval 	(, ε, [
 variable 	id
-variableCont 	(, ε, [
 classPropHead 	id, float, int
 funcDecl 	id, float, int
 funcHead 	id, float, int
@@ -92,8 +91,10 @@ assignStat 	id
 variableTail 	ε, [
 funcDef 	id, float, int
 statement 	id, for, if, get, put, return
-funcBodyDecl 	(, ε, [, id, =
+varOrFuncEval 	ε, [, (
+variableCont 	ε, [, (, .
 term 	(, floatNum, intNum, not, id, +, -
+funcBodyDecl 	ε, [, (, ., id, =
 arithExprHead 	(, floatNum, intNum, not, id, +, -
 funcBodyStat 	ε, id, for, if, get, put, return
 arithExpr 	(, floatNum, intNum, not, id, +, -

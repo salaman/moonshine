@@ -29,7 +29,7 @@ funcBodyInner    -> EPSILON
 funcBodyStat     -> statementList
 funcBodyDecl     -> @assignStat variableCont assignStatTail @3,2 ; funcBodyStat
 funcBodyDecl     -> varDeclTail funcBodyInner
-varDeclTail      -> @id id arraySizeList ;
+varDeclTail      -> variableHead arraySizeList ;
 construct        -> @forStat for ( type id assignStatTail ; relExpr ; assignStat ) statBlock ;
 construct        -> @ifStat if ( expr ) then statBlock else statBlock ; @4,1
 construct        -> @getStat get ( variable ) ; @2,1
@@ -64,16 +64,17 @@ factor           -> @not not factor @2,1
 factor           -> varOrFunc
 factor           -> sign factor @2,1
 varOrFunc        -> variableHead varOrFuncEval varOrFuncInner
-varOrFuncEval    -> functionCallTail
 varOrFuncEval    -> variableTail
+varOrFuncEval    -> functionCallTail
 varOrFuncInner   -> . varOrFunc
 varOrFuncInner   -> EPSILON
 variable         -> variableHead variableCont
 variableHead     -> @id id
+variableCont     -> variableTail variableCont2
 variableCont     -> functionCallTail variableTrap
-variableCont     -> variableTail
+variableCont2    -> . variableHead variableCont
+variableCont2    -> EPSILON
 variableTrap     -> . variableHead variableCont
-variableTrap     -> EPSILON
 variableTail     -> indiceList
 functionCallTail -> ( aParams )
 indice           -> [ arithExpr ]

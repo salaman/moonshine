@@ -38,13 +38,14 @@ varOrFunc 	*, /, and, +, -, or, ], ), eq, geq, gt, leq, lt, neq, ;, ,
 varOrFuncEval 	., *, /, and, +, -, or, ], ), eq, geq, gt, leq, lt, neq, ;, ,
 varOrFuncInner 	*, /, and, +, -, or, ], ), eq, geq, gt, leq, lt, neq, ;, ,
 variable 	=, )
-variableHead 	(, [, ., id, =, ), *, /, and, +, -, or, ], eq, geq, gt, leq, lt, neq, ;, ,
+variableHead 	[, (, ., ;, id, =, ), *, /, and, +, -, or, ], eq, geq, gt, leq, lt, neq, ,
 variableCont 	=, )
+variableCont2 	=, )
 variableTrap 	=, )
-variableTail 	=, ), ., *, /, and, +, -, or, ], eq, geq, gt, leq, lt, neq, ;, ,
-functionCallTail 	., =, ), *, /, and, +, -, or, ], eq, geq, gt, leq, lt, neq, ;, ,
-indice 	[, =, ), ., *, /, and, +, -, or, ], eq, geq, gt, leq, lt, neq, ;, ,
-indiceList 	=, ), ., *, /, and, +, -, or, ], eq, geq, gt, leq, lt, neq, ;, ,
+variableTail 	., =, ), *, /, and, +, -, or, ], eq, geq, gt, leq, lt, neq, ;, ,
+functionCallTail 	., *, /, and, +, -, or, ], ), eq, geq, gt, leq, lt, neq, ;, ,
+indice 	[, ., =, ), *, /, and, +, -, or, ], eq, geq, gt, leq, lt, neq, ;, ,
+indiceList 	., =, ), *, /, and, +, -, or, ], eq, geq, gt, leq, lt, neq, ;, ,
 arraySize 	[, ,, ;, )
 arraySizeList 	,, ;, )
 type 	id
