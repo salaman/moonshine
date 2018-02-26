@@ -24,6 +24,11 @@ bool Parser::parse(Lexer* lex)
         const GrammarToken x = stack_.back();
 
         if (x.type == GrammarTokenType::TERMINAL) {
+
+            /*
+             * Terminal symbol
+             */
+
             if (x.value == static_cast<const int>(a->type)) {
                 stack_.pop_back();
                 //delete a;
@@ -34,10 +39,69 @@ bool Parser::parse(Lexer* lex)
                 error = true;
                 throw std::runtime_error("err 1");
             }
+
+        } else if (x.type == GrammarTokenType::SEMANTIC) {
+
+            /*
+             * Semantic symbol
+             */
+
+            stack_.pop_back();
+
+            if (x.value == 0) {
+                // makeNode() - semantic action to create a leaf node
+                semanticStack_.emplace_back(ast::Node::makeNode(x.name, a));
+            } else if (x.parent == 0) {
+                // makeSiblings() - semantic action to join several AST nodes
+                std::vector<std::unique_ptr<ast::Node>> children;
+
+                for (int i = x.value; i > 1; --i) {
+                    if (semanticStack_.empty()) {
+                        throw std::runtime_error("Tried popping from empty semantic stack in makeSiblings");
+                    } else {
+                        children.push_back(std::move(semanticStack_.back()));
+                    }
+
+                    semanticStack_.pop_back();
+                }
+
+                for (auto i = children.rbegin(); i != children.rend(); ++i) {
+                    semanticStack_.back()->adoptChildren(std::move(*i));
+                }
+            } else {
+                // makeFamily() - semantic action to create a new AST hierarchy
+                std::vector<std::unique_ptr<ast::Node>> children;
+                std::unique_ptr<ast::Node> parent;
+
+                for (int i = x.value; i > 0; --i) {
+                    if (semanticStack_.empty()) {
+                        throw std::runtime_error("Tried popping from empty semantic stack in makeFamily");
+                    } else if (i == x.parent) {
+                        parent = std::move(semanticStack_.back());
+                    } else {
+                        children.push_back(std::move(semanticStack_.back()));
+                    }
+
+                    semanticStack_.pop_back();
+                }
+
+                for (auto i = children.rbegin(); i != children.rend(); ++i) {
+                    parent->adoptChildren(std::move(*i));
+                }
+
+                semanticStack_.push_back(std::move(parent));
+            }
+
         } else {
+
+            /*
+             * Non-terminal symbol
+             */
+
             const Production p = grammar_(x, a->type);
 
             printSentencialForm(x, p);
+            printSemanticStack();
 
             if (!p.isError()) {
                 stack_.pop_back();
@@ -47,6 +111,7 @@ bool Parser::parse(Lexer* lex)
                 error = true;
                 throw std::runtime_error("err 2");
             }
+
         }
 
     }
@@ -102,6 +167,18 @@ void Parser::printSentencialForm(const GrammarToken& token, const Production& pr
 
     if (production.rhs.empty()) {
         std::cout << "\033[34mε\033[0m";
+    }
+
+    std::cout << std::endl;
+}
+
+void Parser::printSemanticStack()
+{
+    std::cout << "↳ semantic stack: ";
+
+    for (const auto& i : semanticStack_) {
+        i->print();
+        std::cout << ' ';
     }
 
     std::cout << std::endl;

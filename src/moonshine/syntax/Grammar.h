@@ -19,13 +19,26 @@ enum class GrammarTokenType
 
 struct GrammarToken
 {
+    GrammarToken(const GrammarTokenType& type_)
+        : GrammarToken(type_, 0, 0)
+    {
+    }
+
     GrammarToken(const GrammarTokenType& type_, const int& value_)
-        : type(type_), value(value_)
+        : GrammarToken(type_, value_, 0)
+    {
+    }
+
+    GrammarToken(const GrammarTokenType& type_, const int& value_, const int& parent_)
+        : type(type_), value(value_), parent(parent_)
     {
     }
 
     const GrammarTokenType type;
+
     const int value;
+    const int parent;
+    std::string name;
 };
 
 struct Production

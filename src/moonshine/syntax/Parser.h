@@ -1,11 +1,12 @@
 #pragma once
 
-#include "moonshine/syntax/Grammar.h"
 #include "moonshine/lexer/Lexer.h"
 #include "moonshine/lexer/Token.h"
+#include "moonshine/syntax/Grammar.h"
+#include "moonshine/syntax/Node.h"
 
-//#include <stack>
 #include <vector>
+#include <memory>
 
 namespace moonshine { namespace syntax {
 
@@ -19,10 +20,12 @@ public:
 private:
     const Grammar grammar_;
     std::vector<GrammarToken> stack_;
+    std::vector<std::unique_ptr<ast::Node>> semanticStack_;
     std::vector<Token*> parsedTokens_;
 
     void printSentencialForm();
     void printSentencialForm(const GrammarToken& token, const Production& production);
+    void printSemanticStack();
 };
 
 }}

@@ -27,49 +27,49 @@ funcBodyInner    -> construct funcBodyStat
 funcBodyInner    -> variableHead funcBodyDecl
 funcBodyInner    -> EPSILON
 funcBodyStat     -> statementList
-funcBodyDecl     -> variableCont assignStatTail ; funcBodyStat
+funcBodyDecl     -> @assignStat variableCont assignStatTail @3,2 ; funcBodyStat
 funcBodyDecl     -> varDeclTail funcBodyInner
-varDeclTail      -> id arraySizeList ;
-construct        -> for ( type id assignStatTail ; relExpr ; assignStat ) statBlock ;
-construct        -> if ( expr ) then statBlock else statBlock ;
-construct        -> get ( variable ) ;
-construct        -> put ( expr ) ;
-construct        -> return ( expr ) ;
+varDeclTail      -> @id id arraySizeList ;
+construct        -> @forStat for ( type id assignStatTail ; relExpr ; assignStat ) statBlock ;
+construct        -> @ifStat if ( expr ) then statBlock else statBlock ; @4,1
+construct        -> @getStat get ( variable ) ; @2,1
+construct        -> @putStat put ( expr ) ; @2,1
+construct        -> @returnStat return ( expr ) ; @2,1
 statement        -> assignStat ;
 statement        -> construct
-statementList    -> statement statementList
+statementList    -> statement @2,1 statementList
 statementList    -> EPSILON
-assignStat       -> variable assignStatTail
+assignStat       -> @assignStat variable assignStatTail @3,1
 assignStatTail   -> assignOp expr
-statBlock        -> { statementList }
-statBlock        -> statement
-statBlock        -> EPSILON
+statBlock        -> @statBlock { statementList }
+statBlock        -> @statBlock statement @2,1
+statBlock        -> @statBlock EPSILON
 expr             -> arithExpr exprTail
-exprTail         -> relOp arithExpr
+exprTail         -> relOp arithExpr @2,1
 exprTail         -> EPSILON
 relExpr          -> arithExpr relOp arithExpr
 arithExpr        -> arithExprHead arithExprTail
 arithExprHead    -> term
-arithExprTail    -> addOp term arithExprTail
+arithExprTail    -> addOp term @3,2 arithExprTail
 arithExprTail    -> EPSILON
-sign             -> +
-sign             -> -
+sign             -> @sign +
+sign             -> @sign -
 term             -> factor termNR
-termNR           -> multOp factor termNR
+termNR           -> multOp factor @3,2 termNR
 termNR           -> EPSILON
 factor           -> ( arithExpr )
-factor           -> floatNum
-factor           -> intNum
-factor           -> not factor
+factor           -> @num floatNum
+factor           -> @num intNum
+factor           -> @not not factor @2,1
 factor           -> varOrFunc
-factor           -> sign factor
+factor           -> sign factor @2,1
 varOrFunc        -> variableHead varOrFuncEval varOrFuncInner
 varOrFuncEval    -> functionCallTail
 varOrFuncEval    -> variableTail
 varOrFuncInner   -> . varOrFunc
 varOrFuncInner   -> EPSILON
 variable         -> variableHead variableCont
-variableHead     -> id
+variableHead     -> @id id
 variableCont     -> functionCallTail variableTrap
 variableCont     -> variableTail
 variableTrap     -> . variableHead variableCont
@@ -97,15 +97,15 @@ aParamsTail      -> , expr
 aParamsTailList  -> aParamsTail aParamsTailList
 aParamsTailList  -> EPSILON
 assignOp         -> =
-relOp            -> eq
-relOp            -> geq
-relOp            -> gt
-relOp            -> leq
-relOp            -> lt
-relOp            -> neq
-addOp            -> +
-addOp            -> -
-addOp            -> or
-multOp           -> *
-multOp           -> /
-multOp           -> and
+relOp            -> @relOp eq
+relOp            -> @relOp geq
+relOp            -> @relOp gt
+relOp            -> @relOp leq
+relOp            -> @relOp lt
+relOp            -> @relOp neq
+addOp            -> @addOp +
+addOp            -> @addOp -
+addOp            -> @addOp or
+multOp           -> @multOp *
+multOp           -> @multOp /
+multOp           -> @multOp and

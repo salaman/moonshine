@@ -28,6 +28,8 @@ set(SOURCE_FILES
         syntax/Grammar.h
         syntax/Parser.cpp
         syntax/Parser.h
+        syntax/Node.cpp
+        syntax/Node.h
         )
 
 # define target

@@ -5,6 +5,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <algorithm>
+#include <cctype>
 
 namespace moonshine { namespace syntax {
 
@@ -181,20 +182,44 @@ void Grammar::parseGrammarFile(const char* fileName)
             bool isNonTerminal = nonTerminal != nonTerminals_.end();
             bool isTerminal = terminal != tokenLookup_.end();
             bool isEpsilon = temp == "EPSILON";
+            bool isSemantic = temp.front() == '@';
 
-            if (!isTerminal && !isNonTerminal && !isEpsilon) {
+            if (!isTerminal && !isNonTerminal && !isEpsilon && !isSemantic) {
                 throw std::runtime_error(std::string("Invalid token encountered: ") + temp);
             }
 
             //std::cout << (isEpsilon ? "ε" : temp) << " ";
 
-            if (isEpsilon) {
-                continue;
-            }
+            if (isSemantic) {
+                // get rid of the @
+                temp.erase(0, 1);
 
-            GrammarTokenType type = isNonTerminal ? GrammarTokenType::NON_TERMINAL : GrammarTokenType::TERMINAL;
-            int value = isNonTerminal ? nonTerminal->second : static_cast<int>(terminal->second);
-            tokens.emplace_back(type, value);
+                if (temp.empty()) {
+                    throw std::runtime_error("Invalid semantic action encountered: @");
+                }
+
+                auto delim = temp.find(',');
+                auto isNumeric = std::isdigit(temp.front());
+
+                if (delim == std::string::npos && !isNumeric) {
+                    // makeNode operation
+                    // @name - name of AST leaf node
+                    tokens.emplace_back(GrammarTokenType::SEMANTIC);
+                    tokens.back().name = temp;
+                } else if (delim == std::string::npos) {
+                    // makeSiblings operation
+                    // @n - n = pop amount
+                    tokens.emplace_back(GrammarTokenType::SEMANTIC, std::stoi(temp));
+                } else {
+                    // makeFamily operation
+                    // @n,i - n = pop amount, i = parent index
+                    tokens.emplace_back(GrammarTokenType::SEMANTIC, std::stoi(temp.substr(0, delim)), std::stoi(temp.substr(delim + 1)));
+                }
+            } else if (!isEpsilon) {
+                GrammarTokenType type = isNonTerminal ? GrammarTokenType::NON_TERMINAL : GrammarTokenType::TERMINAL;
+                int value = isNonTerminal ? nonTerminal->second : static_cast<int>(terminal->second);
+                tokens.emplace_back(type, value);
+            }
         }
 
         productions_.emplace_back(tokens);

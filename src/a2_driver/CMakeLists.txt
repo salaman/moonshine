@@ -12,6 +12,12 @@ set(SOURCE_FILES
 add_executable(${TARGET} ${SOURCE_FILES})
 target_link_libraries(${TARGET} moonshine)
 
-add_custom_command(TARGET ${TARGET} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_SOURCE_DIR}/res $<TARGET_FILE_DIR:${TARGET}>)
+configure_file(${CMAKE_SOURCE_DIR}/res/grammar.txt ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COPYONLY)
+configure_file(${CMAKE_SOURCE_DIR}/res/first.txt ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COPYONLY)
+configure_file(${CMAKE_SOURCE_DIR}/res/follow.txt ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COPYONLY)
+configure_file(${CMAKE_SOURCE_DIR}/res/table.json ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COPYONLY)
+
+#add_custom_command(TARGET ${TARGET} PRE_BUILD
+#        COMMAND ${CMAKE_COMMAND} -E copy_directory
+#        ${CMAKE_SOURCE_DIR}/res $<TARGET_FILE_DIR:${TARGET}>)
+
