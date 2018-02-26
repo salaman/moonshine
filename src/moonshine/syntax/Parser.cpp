@@ -18,7 +18,7 @@ bool Parser::parse(Lexer* lex)
     stack_.emplace_back(GrammarTokenType::END, 0);
     stack_.push_back(grammar_.startToken());
 
-    Token* a = lex->getNextToken();
+    std::shared_ptr<Token> a(lex->getNextToken());
 
     while (a != nullptr && stack_.back().type != GrammarTokenType::END) {
         const GrammarToken x = stack_.back();
@@ -33,7 +33,7 @@ bool Parser::parse(Lexer* lex)
                 stack_.pop_back();
                 //delete a;
                 parsedTokens_.emplace_back(a);
-                a = lex->getNextToken();
+                a.reset(lex->getNextToken());
             } else {
                 // skipErrors()
                 error = true;
@@ -117,11 +117,6 @@ bool Parser::parse(Lexer* lex)
     }
 
     printSentencialForm();
-
-    if (a != nullptr) {
-        delete a;
-        a = nullptr;
-    }
 
     if (error || stack_.size() != 1 || stack_.back().type != GrammarTokenType::END) {
         return false;

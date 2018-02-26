@@ -1,6 +1,5 @@
 #include "TokenType.h"
 
-#include <nlohmann/json.hpp>
 #include <map>
 
 namespace moonshine {

@@ -13,7 +13,7 @@ public:
     virtual inline const char* name() const
     { return "Node"; };
 
-    static std::unique_ptr<Node> makeNode(const std::string& name, Token* op);
+    static std::unique_ptr<Node> makeNode(const std::string& name, std::shared_ptr<Token>& op);
 
     template<typename... Args>
     static void makeFamily(std::unique_ptr<Node> op, Args... args);
@@ -40,24 +40,24 @@ protected:
 class Leaf : public Node
 {
 public:
-    Leaf(const Token* token) : token_(token)
+    Leaf(std::shared_ptr<Token>& token) : token_(token)
     {}
 
-    inline const Token* token() const
+    inline const std::shared_ptr<Token>& token() const
     {
         return token_;
     }
 
     void print() const override;
 protected:
-    const Token* token_ = nullptr;
+    const std::shared_ptr<Token> token_;
 };
 
 #define AST_LEAF(NAME) \
     class NAME : public Leaf \
     { \
     public: \
-        explicit NAME(const Token* token) : Leaf(token) {} \
+        explicit NAME(std::shared_ptr<Token>& token) : Leaf(token) {} \
         inline const char* name() const override { return #NAME; }; \
     }
 

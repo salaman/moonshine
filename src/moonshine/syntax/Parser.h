@@ -21,7 +21,7 @@ private:
     const Grammar grammar_;
     std::vector<GrammarToken> stack_;
     std::vector<std::unique_ptr<ast::Node>> semanticStack_;
-    std::vector<Token*> parsedTokens_;
+    std::vector<std::shared_ptr<Token>> parsedTokens_;
 
     void printSentencialForm();
     void printSentencialForm(const GrammarToken& token, const Production& production);

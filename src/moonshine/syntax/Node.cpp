@@ -52,7 +52,7 @@ void Node::adoptChildren(std::unique_ptr<Node> y)
     }
 }
 
-std::unique_ptr<Node> Node::makeNode(const std::string& name, Token* op)
+std::unique_ptr<Node> Node::makeNode(const std::string& name, std::shared_ptr<Token>& op)
 {
     Node* node = nullptr;
 
