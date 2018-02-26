@@ -31,11 +31,17 @@ int main(int argc, const char** argv)
     std::cout << "Parsing: " << input << std::endl;
     std::cout << std::endl;
 
+    std::ofstream astOutput("ast.dot", std::ios::trunc);
+
     syntax::Parser parser(grammar);
 
     std::unique_ptr<ast::Node> astRoot;
 
     astRoot = parser.parse(&lex);
+
+    if (astRoot) {
+        astRoot->graphviz(astOutput);
+    }
 
     return astRoot == nullptr;
 }

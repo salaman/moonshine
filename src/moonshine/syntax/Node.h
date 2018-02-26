@@ -3,7 +3,7 @@
 #include "moonshine/lexer/Token.h"
 
 #include <memory>
-#include <iostream>
+#include <ostream>
 
 namespace moonshine { namespace ast {
 
@@ -23,8 +23,10 @@ public:
 
     Node* child() const;
     Node* next() const;
-
+    virtual bool isLeaf() const;
     virtual void print() const;
+    void graphviz(std::ostream& s) const;
+    virtual void subnodeGraphviz(std::ostream& s) const;
 protected:
     // parent_
     Node* parent_ = nullptr;
@@ -48,7 +50,9 @@ public:
         return token_;
     }
 
+    bool isLeaf() const override ;
     void print() const override;
+    void subnodeGraphviz(std::ostream& s) const override;
 protected:
     const std::shared_ptr<Token> token_;
 };

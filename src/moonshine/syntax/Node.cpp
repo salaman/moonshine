@@ -145,6 +145,80 @@ void Node::print() const
     }
 }
 
+void Node::graphviz(std::ostream& s) const
+{
+    s << "digraph ast {" << std::endl;
+    s << R"(    forcelabels=true)" << std::endl;
+
+    s << "    " << reinterpret_cast<std::uintptr_t>(this) << R"( [label=")" << name() << "\"]" << std::endl;
+
+    const Node* xsibs = child();
+
+    // print children recursively
+    while (xsibs != nullptr) {
+        s << "    " << reinterpret_cast<std::uintptr_t>(xsibs) << R"( [label=")" << xsibs->name() << "\"]";
+
+        if (xsibs->isLeaf()) {
+            s << "[style=filled, fillcolor=skyblue]";
+        }
+        s << std::endl << "    " << reinterpret_cast<std::uintptr_t>(this) << " -> " << reinterpret_cast<std::uintptr_t>(xsibs) << std::endl;
+        xsibs->subnodeGraphviz(s);
+        xsibs = xsibs->next();
+    }
+
+    s << "}" << std::endl;
+}
+
+void Node::subnodeGraphviz(std::ostream& s) const
+{
+    const Node* xsibs = child();
+
+    // print children recursively
+    while (xsibs != nullptr) {
+        s << "    " << reinterpret_cast<std::uintptr_t>(xsibs) << R"( [label=")" << xsibs->name() << "\"]";
+
+        if (xsibs->isLeaf()) {
+            s << "[style=filled, fillcolor=skyblue]";
+        }
+
+        s << std::endl << "    " << reinterpret_cast<std::uintptr_t>(this) << " -> " << reinterpret_cast<std::uintptr_t>(xsibs) << std::endl;
+        xsibs->subnodeGraphviz(s);
+        xsibs = xsibs->next();
+    }
+}
+
+bool Node::isLeaf() const
+{
+    return false;
+}
+
+bool Leaf::isLeaf() const
+{
+    return !leftmostChild_;
+}
+
+void Leaf::subnodeGraphviz(std::ostream& s) const
+{
+    const Node* xsibs = child();
+
+    s << "    " << reinterpret_cast<std::uintptr_t>(token_.get()) << R"( [label=")" << token_->value << "\", style=dashed]" << std::endl;
+    s << "    " << reinterpret_cast<std::uintptr_t>(this) << " -> " << reinterpret_cast<std::uintptr_t>(token_.get()) << "[style=dashed, arrowhead=none]" << std::endl;
+
+    // print children recursively
+    while (xsibs != nullptr) {
+        s << "    " << reinterpret_cast<std::uintptr_t>(xsibs) << R"( [label=")" << xsibs->name() << "\"]";
+
+        if (xsibs->isLeaf()) {
+            s << "[style=filled, fillcolor=skyblue]";
+        }
+
+        s << std::endl << "    " << reinterpret_cast<std::uintptr_t>(xsibs) << R"( [label=")" << xsibs->name() << "\"]" << std::endl;
+        s << "    " << reinterpret_cast<std::uintptr_t>(this) << " -> " << reinterpret_cast<std::uintptr_t>(xsibs) << std::endl;
+        xsibs->subnodeGraphviz(s);
+        xsibs = xsibs->next();
+    }
+}
+
 void Leaf::print() const
 {
     Node::print();
