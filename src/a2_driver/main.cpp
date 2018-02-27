@@ -17,29 +17,42 @@ using namespace moonshine;
 int main(int argc, const char** argv)
 {
     Lexer lex;
-
-    //std::string input = "program { int idx; };";
-    //std::string input = "program { id = id().id[id][id].id(); };";
-    std::string input = "program { int idx[5]; idx[1] = id(3+4); };";
-
-    std::istringstream stream(input);
-    lex.startLexing(&stream);
-
     syntax::Grammar grammar("grammar.txt",  "table.json", "first.txt", "follow.txt");
-    std::cout << std::endl;
-
-    std::cout << "Parsing: " << input << std::endl;
-    std::cout << std::endl;
-
-    std::ofstream astOutput("ast.dot", std::ios::trunc);
-
     syntax::Parser parser(grammar);
 
+    // use string for lexing
+    //std::string input = "program { int a; int b; };";
+    //std::istringstream stream(input);
+    //lex.startLexing(&stream);
+
+    // use stdin for lexing
+    lex.startLexing(&std::cin);
+
+    parser.setAnsi(false); // set to true for color output
+
+    std::ofstream derivationOutput("derivation.txt", std::ios::trunc);
     std::unique_ptr<ast::Node> astRoot;
 
-    astRoot = parser.parse(&lex);
+    astRoot = parser.parse(&lex, &derivationOutput); // file output
+    //astRoot = parser.parse(&lex, &std::cout); // stdout output (supports colors!)
+    //astRoot = parser.parse(&lex, nullptr); // disable output
 
+    // output errors
+    for (const auto& e : parser.getErrors()) {
+        switch (e.type) {
+            case syntax::ParseErrorType::E_UNEXPECTED_TOKEN:
+                derivationOutput << "error: unexpected token " << e.token->value << " at position " << e.token->position << std::endl;
+            case syntax::ParseErrorType::E_UNEXPECTED_EOF:
+                derivationOutput << "error: unexpected end of file reached" << std::endl;
+                break;
+            default:
+                break;
+        }
+    }
+
+    // print the AST tree graphviz output
     if (astRoot) {
+        std::ofstream astOutput("ast.dot", std::ios::trunc);
         astRoot->graphviz(astOutput);
     }
 

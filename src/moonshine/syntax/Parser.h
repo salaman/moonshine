@@ -4,6 +4,7 @@
 #include "moonshine/lexer/Token.h"
 #include "moonshine/syntax/Grammar.h"
 #include "moonshine/syntax/Node.h"
+#include "moonshine/syntax/ParseError.h"
 
 #include <vector>
 #include <memory>
@@ -17,13 +18,17 @@ public:
     explicit Parser(const Grammar& grammar);
 
     std::unique_ptr<ast::Node> parse(Lexer* lex, std::ostream* output);
-    void inverseRHSMultiplePush(const std::vector<GrammarToken>& tokens);
+    const std::vector<ParseError>& getErrors() const;
+    void setAnsi(const bool& ansi);
 private:
     const Grammar grammar_;
     std::vector<GrammarToken> stack_;
     std::vector<std::unique_ptr<ast::Node>> semanticStack_;
     std::vector<std::shared_ptr<Token>> parsedTokens_;
+    std::vector<ParseError> errors_;
+    bool ansi_ = true;
 
+    void inverseRHSMultiplePush(const std::vector<GrammarToken>& tokens);
     void skipErrors(Lexer* lex, std::shared_ptr<Token>& a, const bool& isPopError);
 
     void printSentencialForm(std::ostream* output);

@@ -84,21 +84,21 @@ Production Grammar::operator()(const GrammarToken& nonTerminal, const TokenType&
     return productions_[productionId];
 }
 
-std::string Grammar::tokenName(const GrammarToken& token) const
+std::string Grammar::tokenName(const GrammarToken& token, const bool& ansi) const
 {
     if (token.type == GrammarTokenType::TERMINAL) {
-        return std::string("") + TokenName[static_cast<TokenType>(token.value)] + std::string("");
+        return TokenName[static_cast<TokenType>(token.value)];
     } else if (token.type == GrammarTokenType::NON_TERMINAL) {
-        return std::string("\033[31m") + std::find_if(nonTerminals_.begin(), nonTerminals_.end(), [&token](const std::map<std::string, int>::value_type& i) {
+        return (ansi ? "\033[31m" : "") + std::find_if(nonTerminals_.begin(), nonTerminals_.end(), [&token](const std::map<std::string, int>::value_type& i) {
             return i.second == token.value;
-        })->first + std::string("\033[0m");
+        })->first + (ansi ? "\033[0m" : "");
     } else if (token.type == GrammarTokenType::END) {
         return "$";
     } else if (token.type == GrammarTokenType::SEMANTIC) {
         if (!token.name.empty()) {
-            return "\033[33m@" + token.name + "\033[0m";
+            return (ansi ? "\033[33m@" : "@") + token.name + (ansi ? "\033[0m" : "");
         } else {
-            return "\033[33m@" + std::to_string(token.value) + ',' + std::to_string(token.parent) + "\033[0m";
+            return (ansi ? "\033[33m@" : "@") + std::to_string(token.value) + ',' + std::to_string(token.parent) + (ansi ? "\033[0m" : "");
         }
     }
 

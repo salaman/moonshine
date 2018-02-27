@@ -72,7 +72,7 @@ class Grammar
 {
 public:
     Grammar(const char* grammarFileName, const char* tableFileName, const char* firstFileName, const char* followFileName);
-    std::string tokenName(const GrammarToken& token) const;
+    std::string tokenName(const GrammarToken& token, const bool& ansi = false) const;
     GrammarToken startToken() const;
 
     Production operator()(const GrammarToken& nonTerminal, const TokenType& input) const;

@@ -1,6 +1,7 @@
 #include "Parser.h"
 
 #include <algorithm>
+#include <iostream>
 
 namespace moonshine { namespace syntax {
 
@@ -17,13 +18,12 @@ std::unique_ptr<ast::Node> Parser::parse(Lexer* lex, std::ostream* output)
     stack_.push_back(grammar_.startToken());
 
     std::shared_ptr<Token> a(lex->getNextToken());
-
     Production p;
 
     while (stack_.back().type != GrammarTokenType::END) {
         const GrammarToken x = stack_.back();
 
-        if (/*a != nullptr &&*/ x.type == GrammarTokenType::TERMINAL) {
+        if (x.type == GrammarTokenType::TERMINAL) {
 
             /*
              * Terminal symbol
@@ -32,21 +32,16 @@ std::unique_ptr<ast::Node> Parser::parse(Lexer* lex, std::ostream* output)
             if (a == nullptr) {
                 skipErrors(lex, a, true);
                 error = true;
-                continue;
-            }
-
-            if (x.value == static_cast<const int>(a->type)) {
+            } else if (x.value == static_cast<const int>(a->type)) {
                 stack_.pop_back();
-                //delete a;
                 parsedTokens_.emplace_back(a);
                 a.reset(lex->getNextToken());
             } else {
-                //throw std::runtime_error("error");
                 skipErrors(lex, a, p.isPopError);
                 error = true;
             }
 
-        } else if (/*a != nullptr &&*/ x.type == GrammarTokenType::NON_TERMINAL) {
+        } else if (x.type == GrammarTokenType::NON_TERMINAL) {
 
             /*
              * Non-terminal symbol
@@ -55,17 +50,12 @@ std::unique_ptr<ast::Node> Parser::parse(Lexer* lex, std::ostream* output)
             if (a == nullptr) {
                 skipErrors(lex, a, true);
                 error = true;
-                continue;
-            }
+            } else if (!(p = grammar_(x, a->type)).isError()) {
+                if (output) {
+                    printSentencialForm(output, x, p);
+                    printSemanticStack(output);
+                }
 
-            p = grammar_(x, a->type);
-
-            if (output) {
-                printSentencialForm(output, x, p);
-                printSemanticStack(output);
-            }
-
-            if (!p.isError()) {
                 stack_.pop_back();
                 inverseRHSMultiplePush(p.rhs);
             } else {
@@ -80,6 +70,11 @@ std::unique_ptr<ast::Node> Parser::parse(Lexer* lex, std::ostream* output)
              */
 
             stack_.pop_back();
+
+            if (error) {
+                // stop processing semantic stack on error
+                continue;
+            }
 
             if (x.value == -1) {
                 // pop
@@ -146,7 +141,7 @@ std::unique_ptr<ast::Node> Parser::parse(Lexer* lex, std::ostream* output)
     }
 
     if (error || stack_.size() != 1 || stack_.back().type != GrammarTokenType::END) {
-        return std::move(semanticStack_.back());
+        return nullptr;
     }
 
     std::unique_ptr<ast::Node> node = std::move(semanticStack_.back());
@@ -162,16 +157,22 @@ void Parser::inverseRHSMultiplePush(const std::vector<GrammarToken>& tokens)
     });
 }
 
-
 void Parser::skipErrors(Lexer* lex, std::shared_ptr<Token>& a, const bool& isPopError)
 {
-    //std::cout << "*** syntax error at " << a->value << std::endl;
+    if (a) {
+        errors_.emplace_back(ParseErrorType::E_UNEXPECTED_TOKEN, a);
+    } else {
+        errors_.emplace_back(ParseErrorType::E_UNEXPECTED_EOF, a);
+    }
 
     if (isPopError) {
         stack_.pop_back();
     } else {
         a.reset(lex->getNextToken());
-        //throw std::runtime_error("err 2");
+
+        while (a && !grammar_(stack_.back(), a->type).isError()) {
+            a.reset(lex->getNextToken());
+        }
     }
 }
 
@@ -189,11 +190,12 @@ void Parser::printSentencialForm(std::ostream* output)
 
     std::for_each(stack_.rbegin(), --stack_.rend(), [this, &first, &output](const GrammarToken& t) {
         if (first) {
-            *output << "\033[4m";
+            if (ansi_) *output << "\033[4m";
             first = false;
         }
 
-        *output << grammar_.tokenName(t) << "\033[0m ";
+        *output << grammar_.tokenName(t, ansi_);
+        *output << (ansi_ ? "\033[0m" : "") << ' ';
     });
 }
 
@@ -205,14 +207,14 @@ void Parser::printSentencialForm(std::ostream* output, const GrammarToken& token
 
     printSentencialForm(output);
 
-    *output << std::endl << "↳ new production: " << grammar_.tokenName(token) << " -> ";
+    *output << std::endl << "↳ new production: " << grammar_.tokenName(token, ansi_) << " -> ";
 
     for (const auto& i : production.rhs) {
-        *output << grammar_.tokenName(i) << " ";
+        *output << grammar_.tokenName(i, ansi_) << " ";
     }
 
     if (production.rhs.empty()) {
-        *output << "\033[34mε\033[0m";
+        *output << (ansi_ ? "\033[34m" : "") << "ε" << (ansi_ ? "\033[0m" : "");
     }
 
     *output << std::endl;
@@ -232,6 +234,16 @@ void Parser::printSemanticStack(std::ostream* output)
     }
 
     *output << std::endl << std::endl;
+}
+
+void Parser::setAnsi(const bool& ansi)
+{
+    ansi_ = ansi;
+}
+
+const std::vector<ParseError>& Parser::getErrors() const
+{
+    return errors_;
 }
 
 }}
