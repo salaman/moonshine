@@ -8,6 +8,7 @@ set(TEST_SOURCES
         # Sources here...
         main.cpp
         test_lexer.cpp
+        test_syntax.cpp
         )
 
 add_executable(${TARGET} ${TEST_SOURCES})

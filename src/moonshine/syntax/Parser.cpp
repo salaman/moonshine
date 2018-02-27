@@ -1,8 +1,6 @@
 #include "Parser.h"
 
 #include <algorithm>
-#include <iostream>
-#include <sstream>
 
 namespace moonshine { namespace syntax {
 
@@ -11,7 +9,7 @@ Parser::Parser(const Grammar& grammar)
 {
 }
 
-std::unique_ptr<ast::Node> Parser::parse(Lexer* lex)
+std::unique_ptr<ast::Node> Parser::parse(Lexer* lex, std::ostream* output)
 {
     bool error = false;
 
@@ -20,14 +18,22 @@ std::unique_ptr<ast::Node> Parser::parse(Lexer* lex)
 
     std::shared_ptr<Token> a(lex->getNextToken());
 
+    Production p;
+
     while (stack_.back().type != GrammarTokenType::END) {
         const GrammarToken x = stack_.back();
 
-        if (a != nullptr && x.type == GrammarTokenType::TERMINAL) {
+        if (/*a != nullptr &&*/ x.type == GrammarTokenType::TERMINAL) {
 
             /*
              * Terminal symbol
              */
+
+            if (a == nullptr) {
+                skipErrors(lex, a, true);
+                error = true;
+                continue;
+            }
 
             if (x.value == static_cast<const int>(a->type)) {
                 stack_.pop_back();
@@ -35,26 +41,36 @@ std::unique_ptr<ast::Node> Parser::parse(Lexer* lex)
                 parsedTokens_.emplace_back(a);
                 a.reset(lex->getNextToken());
             } else {
-                // skipErrors()
+                //throw std::runtime_error("error");
+                skipErrors(lex, a, p.isPopError);
+                error = true;
             }
 
-        } if (a != nullptr && x.type == GrammarTokenType::NON_TERMINAL) {
+        } else if (/*a != nullptr &&*/ x.type == GrammarTokenType::NON_TERMINAL) {
 
             /*
              * Non-terminal symbol
              */
 
-            const Production p = grammar_(x, a->type);
+            if (a == nullptr) {
+                skipErrors(lex, a, true);
+                error = true;
+                continue;
+            }
 
-            printSentencialForm(x, p);
-            printSemanticStack();
+            p = grammar_(x, a->type);
+
+            if (output) {
+                printSentencialForm(output, x, p);
+                printSemanticStack(output);
+            }
 
             if (!p.isError()) {
                 stack_.pop_back();
                 inverseRHSMultiplePush(p.rhs);
             } else {
+                skipErrors(lex, a, p.isPopError);
                 error = true;
-                throw std::runtime_error("err 1");
             }
 
         } else if (x.type == GrammarTokenType::SEMANTIC) {
@@ -88,6 +104,13 @@ std::unique_ptr<ast::Node> Parser::parse(Lexer* lex)
                 for (auto i = children.rbegin(); i != children.rend(); ++i) {
                     semanticStack_.back()->adoptChildren(std::move(*i));
                 }
+            } else if (x.parent < 0) {
+                std::vector<std::unique_ptr<ast::Node>> children;
+
+                auto it = semanticStack_.end();
+                for (int i = 0; i < x.value; ++i, --it);
+
+                semanticStack_.erase(it);
             } else {
                 // makeFamily() - semantic action to create a new AST hierarchy
                 std::vector<std::unique_ptr<ast::Node>> children;
@@ -112,17 +135,18 @@ std::unique_ptr<ast::Node> Parser::parse(Lexer* lex)
                 semanticStack_.push_back(std::move(parent));
             }
 
-                // skipErrors() ; error = true
-                error = true;
-                throw std::runtime_error("err 2");
         }
 
     }
 
-    printSentencialForm();
+    if (output) {
+        printSentencialForm(output);
+        *output << std::endl;
+        printSemanticStack(output);
+    }
 
     if (error || stack_.size() != 1 || stack_.back().type != GrammarTokenType::END) {
-        return nullptr;
+        return std::move(semanticStack_.back());
     }
 
     std::unique_ptr<ast::Node> node = std::move(semanticStack_.back());
@@ -138,51 +162,76 @@ void Parser::inverseRHSMultiplePush(const std::vector<GrammarToken>& tokens)
     });
 }
 
-void Parser::printSentencialForm()
+
+void Parser::skipErrors(Lexer* lex, std::shared_ptr<Token>& a, const bool& isPopError)
 {
+    //std::cout << "*** syntax error at " << a->value << std::endl;
+
+    if (isPopError) {
+        stack_.pop_back();
+    } else {
+        a.reset(lex->getNextToken());
+        //throw std::runtime_error("err 2");
+    }
+}
+
+void Parser::printSentencialForm(std::ostream* output)
+{
+    if (!output) {
+        return;
+    }
+
     for (const auto& t : parsedTokens_) {
-        std::cout << TokenName[t->type] << ' ';
+        *output << TokenName[t->type] << ' ';
     }
 
     bool first = true;
 
-    std::for_each(stack_.rbegin(), --stack_.rend(), [this, &first](const GrammarToken& t) {
+    std::for_each(stack_.rbegin(), --stack_.rend(), [this, &first, &output](const GrammarToken& t) {
         if (first) {
-            std::cout << "\033[4m";
+            *output << "\033[4m";
             first = false;
         }
 
-        std::cout << grammar_.tokenName(t) << "\033[0m ";
+        *output << grammar_.tokenName(t) << "\033[0m ";
     });
 }
 
-void Parser::printSentencialForm(const GrammarToken& token, const Production& production)
+void Parser::printSentencialForm(std::ostream* output, const GrammarToken& token, const Production& production)
 {
-    printSentencialForm();
+    if (!output) {
+        return;
+    }
 
-    std::cout << std::endl << "↳ " << grammar_.tokenName(token) << " → ";
+    printSentencialForm(output);
+
+    *output << std::endl << "↳ new production: " << grammar_.tokenName(token) << " -> ";
 
     for (const auto& i : production.rhs) {
-        std::cout << grammar_.tokenName(i) << " ";
+        *output << grammar_.tokenName(i) << " ";
     }
 
     if (production.rhs.empty()) {
-        std::cout << "\033[34mε\033[0m";
+        *output << "\033[34mε\033[0m";
     }
 
-    std::cout << std::endl;
+    *output << std::endl;
 }
 
-void Parser::printSemanticStack()
+void Parser::printSemanticStack(std::ostream* output)
 {
-    std::cout << "↳ semantic stack: ";
-
-    for (const auto& i : semanticStack_) {
-        i->print();
-        std::cout << ' ';
+    if (!output) {
+        return;
     }
 
-    std::cout << std::endl;
+    *output << "↳ semantic stack: ";
+
+    for (const auto& i : semanticStack_) {
+        i->print(output);
+        *output << ' ';
+    }
+
+    *output << std::endl << std::endl;
 }
 
 }}

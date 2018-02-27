@@ -29,7 +29,7 @@ Grammar::Grammar(const char* grammarFileName, const char* tableFileName, const c
     parseFollowFile(followFileName);
 }
 
-const Production Grammar::operator()(const GrammarToken& nonTerminal, const TokenType& input) const
+Production Grammar::operator()(const GrammarToken& nonTerminal, const TokenType& input) const
 {
     if (nonTerminal.type != GrammarTokenType::NON_TERMINAL) {
         throw std::invalid_argument("Given GrammarToken is not a non-terminal");
@@ -161,7 +161,7 @@ void Grammar::parseGrammarFile(const char* fileName)
     //    std::cout << i.second << ": " << i.first << std::endl;
     //}
 
-    std::cout << "Parsed " << nonTerminals_.size() << " non-terminals" << std::endl;
+    //std::cout << "Parsed " << nonTerminals_.size() << " non-terminals" << std::endl;
 
     // reset file
     grammarFile.clear();
@@ -250,7 +250,7 @@ void Grammar::parseGrammarFile(const char* fileName)
         //std::cout << std::endl;
     }
 
-    std::cout << "Parsed " << productions_.size() - 1 << " productions" << std::endl;
+    //std::cout << "Parsed " << productions_.size() - 1 << " productions" << std::endl;
 
     grammarFile.close();
 }

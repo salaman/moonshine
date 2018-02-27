@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <memory>
+#include <ostream>
 
 namespace moonshine { namespace syntax {
 
@@ -15,7 +16,7 @@ class Parser
 public:
     explicit Parser(const Grammar& grammar);
 
-    std::unique_ptr<ast::Node> parse(Lexer* lex);
+    std::unique_ptr<ast::Node> parse(Lexer* lex, std::ostream* output);
     void inverseRHSMultiplePush(const std::vector<GrammarToken>& tokens);
 private:
     const Grammar grammar_;
@@ -23,9 +24,11 @@ private:
     std::vector<std::unique_ptr<ast::Node>> semanticStack_;
     std::vector<std::shared_ptr<Token>> parsedTokens_;
 
-    void printSentencialForm();
-    void printSentencialForm(const GrammarToken& token, const Production& production);
-    void printSemanticStack();
+    void skipErrors(Lexer* lex, std::shared_ptr<Token>& a, const bool& isPopError);
+
+    void printSentencialForm(std::ostream* output);
+    void printSentencialForm(std::ostream* output, const GrammarToken& token, const Production& production);
+    void printSemanticStack(std::ostream* output);
 };
 
 }}

@@ -30,6 +30,7 @@ set(SOURCE_FILES
         syntax/Parser.h
         syntax/Node.cpp
         syntax/Node.h
+        syntax/ParseError.h
         )
 
 # define target

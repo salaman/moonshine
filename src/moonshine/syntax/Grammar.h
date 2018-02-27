@@ -58,11 +58,11 @@ struct Production
     {
     }
 
-    const std::vector<GrammarToken> rhs;
-    const bool isScanError;
-    const bool isPopError;
+    std::vector<GrammarToken> rhs;
+    bool isScanError;
+    bool isPopError;
 
-    inline const bool isError() const
+    inline bool isError() const
     {
         return isScanError || isPopError;
     }
@@ -75,7 +75,7 @@ public:
     std::string tokenName(const GrammarToken& token) const;
     GrammarToken startToken() const;
 
-    const Production operator()(const GrammarToken& nonTerminal, const TokenType& input) const;
+    Production operator()(const GrammarToken& nonTerminal, const TokenType& input) const;
 private:
     /**
      * Productions master list, indexed

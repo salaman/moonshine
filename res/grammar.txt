@@ -28,7 +28,7 @@ funcBodyInner    -> @var variableHead funcBodyDecl
 funcBodyInner    -> EPSILON
 funcBodyStat     -> statementList
 funcBodyDecl     -> variableCont @assignStat assignStatTail ; @3,2 @2,1 funcBodyStat
-funcBodyDecl     -> @! @varDecl varDeclTail @4,2 @2,1 funcBodyInner
+funcBodyDecl     -> @2,-1 @varDecl varDeclTail @4,2 @2,1 funcBodyInner
 varDeclTail      -> variableHead @dimList arraySizeList ;
 construct        -> @forStat for ( type @id id assignStatTail ; relExpr ; assignStat ) statBlock ; @7,1
 construct        -> @ifStat if ( expr ) then statBlock else statBlock ; @4,1
@@ -91,7 +91,7 @@ fParams          -> @fparam type @id id @dimList arraySizeList @4,1 @2,1 fParams
 fParams          -> EPSILON
 aParams          -> @aParams expr @2,1 aParamsTailList
 aParams          -> @aParams EPSILON
-fParamsTail      -> , @fparam type id arraySizeList @4,1 @2,1
+fParamsTail      -> , @fparam type @id id @dimList arraySizeList @4,1 @2,1
 fParamsTailList  -> fParamsTail fParamsTailList
 fParamsTailList  -> EPSILON
 aParamsTail      -> , expr

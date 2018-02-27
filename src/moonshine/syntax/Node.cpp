@@ -92,6 +92,7 @@ std::unique_ptr<Node> Node::makeNode(const std::string& name, std::shared_ptr<To
     AST(fCall);
     AST(indexList);
     AST(aParams);
+    AST(funcDecl);
 
     #undef AST
     #undef AST_LEAF
@@ -124,24 +125,24 @@ Node* Node::next() const
     return rightSib_.get();
 }
 
-void Node::print() const
+void Node::print(std::ostream* s) const
 {
-    std::cout << name();
+    *s << name();
 
     auto ptr = child();
 
     if (ptr != nullptr) {
-        std::cout << '{';
+        *s << '{';
 
         while (ptr != nullptr) {
-            ptr->print();
+            ptr->print(s);
             ptr = ptr->next();
             if (ptr != nullptr) {
-                std::cout << ' ';
+                *s << ' ';
             }
         }
 
-        std::cout << '}';
+        *s << '}';
     }
 }
 
@@ -152,19 +153,7 @@ void Node::graphviz(std::ostream& s) const
 
     s << "    " << reinterpret_cast<std::uintptr_t>(this) << R"( [label=")" << name() << "\"]" << std::endl;
 
-    const Node* xsibs = child();
-
-    // print children recursively
-    while (xsibs != nullptr) {
-        s << "    " << reinterpret_cast<std::uintptr_t>(xsibs) << R"( [label=")" << xsibs->name() << "\"]";
-
-        if (xsibs->isLeaf()) {
-            s << "[style=filled, fillcolor=skyblue]";
-        }
-        s << std::endl << "    " << reinterpret_cast<std::uintptr_t>(this) << " -> " << reinterpret_cast<std::uintptr_t>(xsibs) << std::endl;
-        xsibs->subnodeGraphviz(s);
-        xsibs = xsibs->next();
-    }
+    subnodeGraphviz(s);
 
     s << "}" << std::endl;
 }
@@ -219,12 +208,12 @@ void Leaf::subnodeGraphviz(std::ostream& s) const
     }
 }
 
-void Leaf::print() const
+void Leaf::print(std::ostream* s) const
 {
-    Node::print();
+    Node::print(s);
 
     if (token_ != nullptr) {
-        std::cout << '(' << token_->value << ')';
+        *s << '(' << token_->value << ')';
     }
 }
 

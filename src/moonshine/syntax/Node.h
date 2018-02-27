@@ -24,7 +24,7 @@ public:
     Node* child() const;
     Node* next() const;
     virtual bool isLeaf() const;
-    virtual void print() const;
+    virtual void print(std::ostream* s) const;
     void graphviz(std::ostream& s) const;
     virtual void subnodeGraphviz(std::ostream& s) const;
 protected:
@@ -51,7 +51,7 @@ public:
     }
 
     bool isLeaf() const override ;
-    void print() const override;
+    void print(std::ostream* s) const override;
     void subnodeGraphviz(std::ostream& s) const override;
 protected:
     const std::shared_ptr<Token> token_;
@@ -104,6 +104,7 @@ AST(dataMember);
 AST(fCall);
 AST(indexList);
 AST(aParams);
+AST(funcDecl);
 
 #undef AST
 #undef AST_LEAF
