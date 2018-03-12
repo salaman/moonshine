@@ -31,7 +31,11 @@ set(SOURCE_FILES
         syntax/Node.cpp
         syntax/Node.h
         syntax/ParseError.h
-        )
+        semantic/Visitor.cpp
+        semantic/Visitor.h
+        semantic/TypeCheckVisitor.h
+        semantic/TypeCheckVisitor.cpp
+        syntax/ast_nodes.h)
 
 # define target
 include_directories(${ROOT_INCLUDE_DIR})

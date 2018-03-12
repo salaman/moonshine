@@ -5,7 +5,13 @@
 #include <memory>
 #include <ostream>
 
-namespace moonshine { namespace ast {
+namespace moonshine {
+
+namespace semantic {
+    class Visitor;
+}
+
+namespace ast {
 
 class Node
 {
@@ -24,6 +30,9 @@ public:
     Node* child() const;
     Node* next() const;
     virtual bool isLeaf() const;
+
+    virtual void accept(const std::shared_ptr<semantic::Visitor>& visitor) const = 0;
+
     virtual void print(std::ostream* s) const;
     void graphviz(std::ostream& s) const;
     virtual void subnodeGraphviz(std::ostream& s) const;
@@ -63,6 +72,7 @@ class NAME : public Leaf \
 public: \
     explicit NAME(std::shared_ptr<Token>& token) : Leaf(token) {} \
     inline const char* name() const override { return #NAME; }; \
+    virtual void accept(const std::shared_ptr<semantic::Visitor>& visitor) const; \
 }
 
 #define AST(NAME) \
@@ -70,6 +80,7 @@ class NAME : public Node \
 { \
 public: \
     inline const char* name() const override { return #NAME; }; \
+    virtual void accept(const std::shared_ptr<semantic::Visitor>& visitor) const; \
 }
 
 AST(nul);

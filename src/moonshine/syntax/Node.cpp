@@ -1,5 +1,7 @@
 #include "Node.h"
 
+#include "moonshine/semantic/Visitor.h"
+
 #include <vector>
 #include <stdexcept>
 #include <iostream>
@@ -216,5 +218,28 @@ void Leaf::print(std::ostream* s) const
         *s << '(' << token_->value << ')';
     }
 }
+
+#define AST(NAME) \
+void NAME::accept(const std::shared_ptr<semantic::Visitor>& visitor) const  \
+{                                                                           \
+    const Node* xsibs = child();                                            \
+                                                                            \
+    while (xsibs != nullptr) {                                              \
+        xsibs->accept(visitor);                                             \
+        xsibs = xsibs->next();                                              \
+    }                                                                       \
+    visitor->visit(this);                                                   \
+}
+
+#define AST_LEAF(NAME) \
+void NAME::accept(const std::shared_ptr<semantic::Visitor>& visitor) const  \
+{                                                                           \
+    visitor->visit(this);                                                   \
+}
+
+#include "ast_nodes.h"
+
+#undef AST
+#undef AST_LEAF
 
 }}
