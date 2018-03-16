@@ -4,18 +4,32 @@
 
 namespace moonshine { namespace semantic {
 
-void TypeCheckVisitor::visit(const ast::assignStat* node)
+void TypeCheckVisitor::visit(ast::prog* node)
+{
+    Visitor::visit(node);
+
+    std::cout << "TypeCheckVisitor::visit(prog)" << std::endl;
+}
+
+void TypeCheckVisitor::visit(ast::assignStat* node)
 {
     Visitor::visit(node);
 
     std::cout << "TypeCheckVisitor::visit(assignStat)" << std::endl;
 }
 
-void TypeCheckVisitor::visit(const ast::varDecl* node)
+void TypeCheckVisitor::visit(ast::varDecl* node)
 {
     Visitor::visit(node);
 
     std::cout << "TypeCheckVisitor::visit(varDecl)" << std::endl;
+}
+
+void TypeCheckVisitor::visit(ast::num* node)
+{
+    Visitor::visit(node);
+
+    std::cout << "TypeCheckVisitor::visit(num) " << node->token()->value << std::endl;
 }
 
 }}

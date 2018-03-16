@@ -10,13 +10,15 @@
 
 namespace moonshine { namespace semantic {
 
-class TypeCheckVisitor : public Visitor
+class SymbolTableCreatorVisitor : public Visitor
 {
 public:
     void visit(ast::prog* node) override;
+    void visit(ast::classDecl* node) override;
+    void visit(ast::funcDecl* node) override;
+    void visit(ast::statBlock* node) override;
     void visit(ast::assignStat* node) override;
     void visit(ast::varDecl* node) override;
-    void visit(ast::num* node) override;
 };
 
 }}

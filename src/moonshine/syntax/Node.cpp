@@ -62,39 +62,7 @@ std::unique_ptr<Node> Node::makeNode(const std::string& name, std::shared_ptr<To
     #define AST(NAME) if (name == #NAME) { node = new NAME(); goto found; }
     #define AST_LEAF(NAME) if (name == #NAME) { node = new NAME(op); goto found; }
 
-    AST(nul);
-    AST_LEAF(relOp);
-    AST_LEAF(addOp);
-    AST_LEAF(multOp);
-    AST_LEAF(num);
-    AST_LEAF(id);
-    AST_LEAF(type);
-    AST_LEAF(sign);
-    AST(getStat);
-    AST(putStat);
-    AST(returnStat);
-    AST(forStat);
-    AST(notFactor);
-    AST(ifStat);
-    AST(assignStat);
-    AST(statBlock);
-    AST(prog);
-    AST(classList);
-    AST(funcDefList);
-    AST(classDecl);
-    AST(funcDef);
-    AST(inherList);
-    AST(membList);
-    AST(varDecl);
-    AST(fparamList);
-    AST(dimList);
-    AST(fparam);
-    AST(var);
-    AST(dataMember);
-    AST(fCall);
-    AST(indexList);
-    AST(aParams);
-    AST(funcDecl);
+    #include "ast_nodes.h"
 
     #undef AST
     #undef AST_LEAF
@@ -120,6 +88,17 @@ void Node::makeFamily(std::unique_ptr<Node> op, Args... args)
 Node* Node::child() const
 {
     return leftmostChild_.get();
+}
+
+Node* Node::child(const unsigned int& index) const
+{
+    Node* xsibs = child();
+
+    for (unsigned int i = 0; i < index && xsibs != nullptr; ++i) {
+        xsibs = xsibs->next();
+    }
+
+    return xsibs;
 }
 
 Node* Node::next() const
@@ -183,6 +162,16 @@ bool Node::isLeaf() const
     return false;
 }
 
+std::shared_ptr<semantic::SymbolTable>& Node::symbolTable()
+{
+    return symbolTable_;
+}
+
+std::shared_ptr<semantic::SymbolTableEntry>& Node::symbolTableEntry()
+{
+    return symbolTableEntry_;
+}
+
 bool Leaf::isLeaf() const
 {
     return !leftmostChild_;
@@ -220,21 +209,29 @@ void Leaf::print(std::ostream* s) const
 }
 
 #define AST(NAME) \
-void NAME::accept(const std::shared_ptr<semantic::Visitor>& visitor) const  \
-{                                                                           \
-    const Node* xsibs = child();                                            \
-                                                                            \
-    while (xsibs != nullptr) {                                              \
-        xsibs->accept(visitor);                                             \
-        xsibs = xsibs->next();                                              \
-    }                                                                       \
-    visitor->visit(this);                                                   \
+void NAME::accept(const std::shared_ptr<semantic::Visitor>& visitor) \
+{                                                                    \
+    Node* xsibs = child();                                           \
+                                                                     \
+    while (xsibs != nullptr) {                                       \
+        xsibs->accept(visitor);                                      \
+        xsibs = xsibs->next();                                       \
+    }                                                                \
+                                                                     \
+    visitor->visit(this);                                            \
 }
 
 #define AST_LEAF(NAME) \
-void NAME::accept(const std::shared_ptr<semantic::Visitor>& visitor) const  \
-{                                                                           \
-    visitor->visit(this);                                                   \
+void NAME::accept(const std::shared_ptr<semantic::Visitor>& visitor) \
+{                                                                    \
+    Node* xsibs = child();                                           \
+                                                                     \
+    while (xsibs != nullptr) {                                       \
+        xsibs->accept(visitor);                                      \
+        xsibs = xsibs->next();                                       \
+    }                                                                \
+                                                                     \
+    visitor->visit(this);                                            \
 }
 
 #include "ast_nodes.h"

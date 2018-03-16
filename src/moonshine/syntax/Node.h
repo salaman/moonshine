@@ -1,6 +1,7 @@
 #pragma once
 
 #include "moonshine/lexer/Token.h"
+#include "moonshine/semantic/SymbolTable.h"
 
 #include <memory>
 #include <ostream>
@@ -16,8 +17,7 @@ namespace ast {
 class Node
 {
 public:
-    virtual inline const char* name() const
-    { return "Node"; };
+    virtual inline const char* name() const { return "Node"; };
 
     static std::unique_ptr<Node> makeNode(const std::string& name, std::shared_ptr<Token>& op);
 
@@ -28,10 +28,13 @@ public:
     void adoptChildren(std::unique_ptr<Node> y);
 
     Node* child() const;
+    Node* child(const unsigned int& index) const;
     Node* next() const;
     virtual bool isLeaf() const;
 
-    virtual void accept(const std::shared_ptr<semantic::Visitor>& visitor) const = 0;
+    virtual void accept(const std::shared_ptr<semantic::Visitor>& visitor) = 0;
+    std::shared_ptr<semantic::SymbolTable>& symbolTable();
+    std::shared_ptr<semantic::SymbolTableEntry>& symbolTableEntry();
 
     virtual void print(std::ostream* s) const;
     void graphviz(std::ostream& s) const;
@@ -46,6 +49,10 @@ protected:
 
     // children
     std::unique_ptr<Node> leftmostChild_ = nullptr;
+
+    // symbol table entries
+    std::shared_ptr<semantic::SymbolTable> symbolTable_;
+    std::shared_ptr<semantic::SymbolTableEntry> symbolTableEntry_;
 };
 
 class Leaf : public Node
@@ -59,63 +66,34 @@ public:
         return token_;
     }
 
-    bool isLeaf() const override ;
+    bool isLeaf() const override;
+
+    void accept(const std::shared_ptr<semantic::Visitor>& visitor) override = 0;
+
     void print(std::ostream* s) const override;
     void subnodeGraphviz(std::ostream& s) const override;
 protected:
     const std::shared_ptr<Token> token_;
 };
 
-#define AST_LEAF(NAME) \
-class NAME : public Leaf \
-{ \
-public: \
-    explicit NAME(std::shared_ptr<Token>& token) : Leaf(token) {} \
-    inline const char* name() const override { return #NAME; }; \
-    virtual void accept(const std::shared_ptr<semantic::Visitor>& visitor) const; \
-}
+#define AST_LEAF(NAME)                                                       \
+class NAME : public Leaf                                                     \
+{                                                                            \
+public:                                                                      \
+    explicit NAME(std::shared_ptr<Token>& token) : Leaf(token) {}            \
+    inline const char* name() const override { return #NAME; };              \
+    void accept(const std::shared_ptr<semantic::Visitor>& visitor) override; \
+};
 
-#define AST(NAME) \
-class NAME : public Node \
-{ \
-public: \
-    inline const char* name() const override { return #NAME; }; \
-    virtual void accept(const std::shared_ptr<semantic::Visitor>& visitor) const; \
-}
+#define AST(NAME)                                                            \
+class NAME : public Node                                                     \
+{                                                                            \
+public:                                                                      \
+    inline const char* name() const override { return #NAME; };              \
+    void accept(const std::shared_ptr<semantic::Visitor>& visitor) override; \
+};
 
-AST(nul);
-AST_LEAF(relOp);
-AST_LEAF(addOp);
-AST_LEAF(multOp);
-AST_LEAF(num);
-AST_LEAF(id);
-AST_LEAF(type);
-AST_LEAF(sign);
-AST(getStat);
-AST(putStat);
-AST(returnStat);
-AST(forStat);
-AST(notFactor);
-AST(ifStat);
-AST(assignStat);
-AST(statBlock);
-AST(prog);
-AST(classList);
-AST(funcDefList);
-AST(classDecl);
-AST(funcDef);
-AST(inherList);
-AST(membList);
-AST(varDecl);
-AST(fparamList);
-AST(dimList);
-AST(fparam);
-AST(var);
-AST(dataMember);
-AST(fCall);
-AST(indexList);
-AST(aParams);
-AST(funcDecl);
+#include "ast_nodes.h"
 
 #undef AST
 #undef AST_LEAF

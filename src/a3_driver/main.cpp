@@ -4,6 +4,7 @@
 #include <moonshine/syntax/Grammar.h>
 #include <moonshine/syntax/Parser.h>
 #include <moonshine/semantic/TypeCheckVisitor.h>
+#include <moonshine/semantic/SymbolTableCreatorVisitor.h>
 
 #include <iostream>
 #include <algorithm>
@@ -57,9 +58,13 @@ int main(int argc, const char** argv)
         astRoot->graphviz(astOutput);
     }
 
-    auto visitor = std::make_shared<semantic::TypeCheckVisitor>();
+    astRoot->print(&std::cout); std::cout << std::endl;
+
+    auto visitor = std::make_shared<semantic::SymbolTableCreatorVisitor>();
 
     astRoot->accept(visitor);
+
+    astRoot->symbolTable()->print(std::cout);
 
     return astRoot == nullptr;
 }

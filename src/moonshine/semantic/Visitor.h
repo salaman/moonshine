@@ -12,9 +12,8 @@ namespace moonshine { namespace semantic {
 class Visitor
 {
 public:
-    #define AST(NAME) virtual void visit(const ast::NAME* node) {}
-
-    #define AST_LEAF(NAME) virtual void visit(const ast::NAME* node) {}
+    #define AST(NAME) virtual void visit(ast::NAME* node) {}
+    #define AST_LEAF(NAME) virtual void visit(ast::NAME* node) {}
 
     #include "moonshine/syntax/ast_nodes.h"
 
