@@ -1,6 +1,10 @@
 #include "moonshine/semantic/SymbolTableCreatorVisitor.h"
 
+#include "moonshine/lexer/TokenType.h"
+#include "moonshine/semantic/Type.h"
+
 #include <iostream>
+#include <memory>
 
 namespace moonshine { namespace semantic {
 
@@ -47,7 +51,26 @@ void SymbolTableCreatorVisitor::visit(ast::varDecl* node)
     node->symbolTableEntry() = std::make_shared<SymbolTableEntry>();
     node->symbolTableEntry()->setName(dynamic_cast<ast::Leaf*>(node->child(1))->token()->value);
     node->symbolTableEntry()->setKind(SymbolTableEntryKind::VARIABLE);
-    node->symbolTableEntry()->setType(dynamic_cast<ast::Leaf*>(node->child(0))->token()->value);
+
+    auto typeNode = dynamic_cast<ast::Leaf*>(node->child(0));
+    std::unique_ptr<VariableType> type(new VariableType());
+
+    switch (typeNode->token()->type) {
+        case TokenType::T_INT:
+            type->type = Type::INT;
+            break;
+        case TokenType::T_FLOAT:
+            type->type = Type::FLOAT;
+            break;
+        case TokenType::T_IDENTIFIER:
+            type->type = Type::CLASS;
+            type->className = typeNode->token()->value;
+            break;
+        default:
+            throw std::runtime_error("Invalid AST type node");
+    }
+
+    node->symbolTableEntry()->setType(std::move(type));
 }
 
 void SymbolTableCreatorVisitor::visit(ast::statBlock* node)
@@ -72,7 +95,47 @@ void SymbolTableCreatorVisitor::visit(ast::funcDecl* node)
     node->symbolTableEntry() = std::make_shared<SymbolTableEntry>();
     node->symbolTableEntry()->setName(dynamic_cast<ast::Leaf*>(node->child(1))->token()->value);
     node->symbolTableEntry()->setKind(SymbolTableEntryKind::FUNCTION);
-    node->symbolTableEntry()->setType(dynamic_cast<ast::Leaf*>(node->child(0))->token()->value);
+
+    auto typeNode = dynamic_cast<ast::Leaf*>(node->child(0));
+    std::unique_ptr<FunctionType> type(new FunctionType());
+
+    switch (typeNode->token()->type) {
+        case TokenType::T_INT:
+            type->returnType.type = Type::INT;
+            break;
+        case TokenType::T_FLOAT:
+            type->returnType.type = Type::FLOAT;
+            break;
+        case TokenType::T_IDENTIFIER:
+            type->returnType.type = Type::CLASS;
+            type->returnType.className = typeNode->token()->value;
+            break;
+        default:
+            throw std::runtime_error("Invalid AST type node");
+    }
+
+    for (ast::Node* n = node->child(2)->child(); n != nullptr; n = n->next()) {
+        typeNode = dynamic_cast<ast::Leaf*>(n->child(0));
+        VariableType parameterType;
+        switch (typeNode->token()->type) {
+            case TokenType::T_INT:
+                parameterType.type = Type::INT;
+                break;
+            case TokenType::T_FLOAT:
+                parameterType.type = Type::FLOAT;
+                break;
+            case TokenType::T_IDENTIFIER:
+                parameterType.type = Type::CLASS;
+                parameterType.className = typeNode->token()->value;
+                break;
+            default:
+                throw std::runtime_error("Invalid AST type node");
+        }
+
+        type->parameterTypes.emplace_back(std::move(parameterType));
+    }
+
+    node->symbolTableEntry()->setType(std::move(type));
 }
 
 void SymbolTableCreatorVisitor::visit(ast::classDecl* node)

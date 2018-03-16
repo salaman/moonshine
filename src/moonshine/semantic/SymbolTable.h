@@ -1,8 +1,9 @@
 #pragma once
 
+#include "moonshine/semantic/Type.h"
+
 #include <string>
 #include <vector>
-#include <set>
 #include <unordered_map>
 #include <memory>
 #include <ostream>
@@ -23,20 +24,22 @@ class SymbolTableEntry
 {
 public:
     typedef std::string key_type;
+    typedef std::unique_ptr<SymbolType> type_type;
+    typedef SymbolType* weak_type_type;
 
     SymbolTable* parentTable() const;
     key_type name() const;
     SymbolTableEntryKind kind() const;
-    std::string type() const;
+    weak_type_type type() const;
     SymbolTable* link() const;
     void setName(const key_type& name);
     void setKind(const SymbolTableEntryKind& kind);
-    void setType(const std::string& type);
+    void setType(type_type type);
     void setLink(const std::shared_ptr<SymbolTable>& link);
 private:
     key_type name_;
     SymbolTableEntryKind kind_;
-    std::string type_; // TODO: not a string?
+    type_type type_;
     std::shared_ptr<SymbolTable> link_;
     SymbolTable* parent_ = nullptr;
 

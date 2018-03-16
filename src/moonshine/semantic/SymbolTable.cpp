@@ -21,9 +21,9 @@ SymbolTableEntryKind SymbolTableEntry::kind() const
     return kind_;
 }
 
-std::string SymbolTableEntry::type() const
+SymbolTableEntry::weak_type_type SymbolTableEntry::type() const
 {
-    return type_;
+    return type_.get();
 }
 
 SymbolTable* SymbolTableEntry::link() const
@@ -41,9 +41,9 @@ void SymbolTableEntry::setKind(const SymbolTableEntryKind& kind)
     kind_ = kind;
 }
 
-void SymbolTableEntry::setType(const std::string& type)
+void SymbolTableEntry::setType(SymbolTableEntry::type_type type)
 {
-    type_ = type;
+    type_ = std::move(type);
 }
 
 void SymbolTableEntry::setLink(const std::shared_ptr<SymbolTable>& link)
@@ -89,7 +89,10 @@ void SymbolTable::print(std::ostream& s) const
 
     for (const auto& it : entries_) {
         nameColLen = std::max(nameColLen, it.second->name().size() + 1);
-        typeColLen = std::max(typeColLen, it.second->type().size() + 1);
+
+        if (it.second->type()) {
+            typeColLen = std::max(typeColLen, it.second->type()->str().size() + 1);
+        }
     }
 
     s << std::left;
@@ -136,7 +139,12 @@ void SymbolTable::print(std::ostream& s) const
         }
         s << "│";
 
-        s << std::setw(typeColLen) << it.second->type();
+        s << std::setw(typeColLen);
+        if (it.second->type()) {
+            s << it.second->type()->str();
+        } else {
+            s << "";
+        }
         s << "│" << std::endl;
     }
 
