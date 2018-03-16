@@ -15,16 +15,25 @@ bool VariableType::compare(const SymbolType& rhs) const
 
 std::string VariableType::str() const
 {
+    std::stringstream s;
+
     switch (type) {
         case Type::INT:
-            return "int";
+            s << "int";
+            break;
         case Type::FLOAT:
-            return "float";
+            s << "float";
+            break;
         case Type::CLASS:
-            return className;
+            s << className;
+            break;
     }
 
-    return "";
+    for (const auto& i : indices) {
+        s << '[' << i << ']';
+    }
+
+    return s.str();
 }
 
 bool FunctionType::compare(const SymbolType& rhs) const
@@ -42,8 +51,11 @@ std::string FunctionType::str() const
 
     s << returnType.str() <<  " : ";
 
-    for (const auto& p : parameterTypes) {
-        s << p.str() << ", ";
+    for (auto it = parameterTypes.begin(); it != parameterTypes.end(); ++it) {
+        s << it->str();
+        if (it + 1 != parameterTypes.end()) {
+            s << ", ";
+        }
     }
 
     return s.str();

@@ -19,6 +19,9 @@ public:
     void visit(ast::statBlock* node) override;
     void visit(ast::assignStat* node) override;
     void visit(ast::varDecl* node) override;
+private:
+    void nodeToVariableType(VariableType& type, const ast::Node* node) const;
+    void nodeToFunctionType(FunctionType& type, const ast::Node* node) const;
 };
 
 }}

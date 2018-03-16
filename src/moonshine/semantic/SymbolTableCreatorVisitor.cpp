@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <memory>
+#include <string>
 
 namespace moonshine { namespace semantic {
 
@@ -52,24 +53,8 @@ void SymbolTableCreatorVisitor::visit(ast::varDecl* node)
     node->symbolTableEntry()->setName(dynamic_cast<ast::Leaf*>(node->child(1))->token()->value);
     node->symbolTableEntry()->setKind(SymbolTableEntryKind::VARIABLE);
 
-    auto typeNode = dynamic_cast<ast::Leaf*>(node->child(0));
     std::unique_ptr<VariableType> type(new VariableType());
-
-    switch (typeNode->token()->type) {
-        case TokenType::T_INT:
-            type->type = Type::INT;
-            break;
-        case TokenType::T_FLOAT:
-            type->type = Type::FLOAT;
-            break;
-        case TokenType::T_IDENTIFIER:
-            type->type = Type::CLASS;
-            type->className = typeNode->token()->value;
-            break;
-        default:
-            throw std::runtime_error("Invalid AST type node");
-    }
-
+    nodeToVariableType(*type, node);
     node->symbolTableEntry()->setType(std::move(type));
 }
 
@@ -96,45 +81,8 @@ void SymbolTableCreatorVisitor::visit(ast::funcDecl* node)
     node->symbolTableEntry()->setName(dynamic_cast<ast::Leaf*>(node->child(1))->token()->value);
     node->symbolTableEntry()->setKind(SymbolTableEntryKind::FUNCTION);
 
-    auto typeNode = dynamic_cast<ast::Leaf*>(node->child(0));
     std::unique_ptr<FunctionType> type(new FunctionType());
-
-    switch (typeNode->token()->type) {
-        case TokenType::T_INT:
-            type->returnType.type = Type::INT;
-            break;
-        case TokenType::T_FLOAT:
-            type->returnType.type = Type::FLOAT;
-            break;
-        case TokenType::T_IDENTIFIER:
-            type->returnType.type = Type::CLASS;
-            type->returnType.className = typeNode->token()->value;
-            break;
-        default:
-            throw std::runtime_error("Invalid AST type node");
-    }
-
-    for (ast::Node* n = node->child(2)->child(); n != nullptr; n = n->next()) {
-        typeNode = dynamic_cast<ast::Leaf*>(n->child(0));
-        VariableType parameterType;
-        switch (typeNode->token()->type) {
-            case TokenType::T_INT:
-                parameterType.type = Type::INT;
-                break;
-            case TokenType::T_FLOAT:
-                parameterType.type = Type::FLOAT;
-                break;
-            case TokenType::T_IDENTIFIER:
-                parameterType.type = Type::CLASS;
-                parameterType.className = typeNode->token()->value;
-                break;
-            default:
-                throw std::runtime_error("Invalid AST type node");
-        }
-
-        type->parameterTypes.emplace_back(std::move(parameterType));
-    }
-
+    nodeToFunctionType(*type, node);
     node->symbolTableEntry()->setType(std::move(type));
 }
 
@@ -156,6 +104,96 @@ void SymbolTableCreatorVisitor::visit(ast::classDecl* node)
         if (n->symbolTableEntry()) {
             node->symbolTableEntry()->link()->addEntry(n->symbolTableEntry());
         }
+    }
+}
+
+void SymbolTableCreatorVisitor::nodeToVariableType(VariableType& type, const ast::Node* node) const
+{
+    if (node == nullptr) {
+        throw std::invalid_argument("SymbolTableCreatorVisitor::nodeToVar: node cannot be nullptr");
+    }
+
+    auto typeNode = dynamic_cast<const ast::Leaf*>(node->child(0));
+
+    if (typeNode == nullptr) {
+        throw std::runtime_error("SymbolTableCreatorVisitor::nodeToVar: First child is not a leaf node");
+    }
+
+    // type (node is either type or id)
+    switch (typeNode->token()->type) {
+        case TokenType::T_INT:
+            type.type = Type::INT;
+            break;
+        case TokenType::T_FLOAT:
+            type.type = Type::FLOAT;
+            break;
+        case TokenType::T_IDENTIFIER:
+            type.type = Type::CLASS;
+            type.className = typeNode->token()->value;
+            break;
+        default:
+            throw std::runtime_error("SymbolTableCreatorVisitor::nodeToVar: Invalid AST type node");
+    }
+
+    // dimList
+    for (auto n = dynamic_cast<const ast::num*>(node->child(2)->child()); n != nullptr; n = dynamic_cast<const ast::num*>(n->next())) {
+        type.indices.emplace_back(std::stoi(n->token()->value));
+    }
+}
+
+void SymbolTableCreatorVisitor::nodeToFunctionType(FunctionType& type, const ast::Node* node) const
+{
+    if (node == nullptr) {
+        throw std::invalid_argument("SymbolTableCreatorVisitor::nodeToFunctionType: node cannot be nullptr");
+    }
+
+    auto typeNode = dynamic_cast<const ast::Leaf*>(node->child(0));
+
+    if (typeNode == nullptr) {
+        throw std::runtime_error("SymbolTableCreatorVisitor::nodeToFunctionType: First child is not a leaf node");
+    }
+
+    switch (typeNode->token()->type) {
+        case TokenType::T_INT:
+            type.returnType.type = Type::INT;
+            break;
+        case TokenType::T_FLOAT:
+            type.returnType.type = Type::FLOAT;
+            break;
+        case TokenType::T_IDENTIFIER:
+            type.returnType.type = Type::CLASS;
+            type.returnType.className = typeNode->token()->value;
+            break;
+        default:
+            throw std::runtime_error("SymbolTableCreatorVisitor::nodeToFunctionType: Invalid AST type node");
+    }
+
+    // fparam
+    for (auto fparam = dynamic_cast<const ast::fparam*>(node->child(2)->child()); fparam != nullptr; fparam = dynamic_cast<const ast::fparam*>(fparam->next())) {
+        typeNode = dynamic_cast<ast::Leaf*>(fparam->child(0));
+        VariableType parameterType;
+
+        switch (typeNode->token()->type) {
+            case TokenType::T_INT:
+                parameterType.type = Type::INT;
+                break;
+            case TokenType::T_FLOAT:
+                parameterType.type = Type::FLOAT;
+                break;
+            case TokenType::T_IDENTIFIER:
+                parameterType.type = Type::CLASS;
+                parameterType.className = typeNode->token()->value;
+                break;
+            default:
+                throw std::runtime_error("Invalid AST type node");
+        }
+
+        // dimList
+        for (auto num = dynamic_cast<const ast::num*>(fparam->child(2)->child()); num != nullptr; num = dynamic_cast<const ast::num*>(num->next())) {
+            parameterType.indices.emplace_back(std::stoi(num->token()->value));
+        }
+
+        type.parameterTypes.emplace_back(parameterType);
     }
 }
 
