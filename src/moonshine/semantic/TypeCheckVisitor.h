@@ -13,10 +13,15 @@ namespace moonshine { namespace semantic {
 class TypeCheckVisitor : public Visitor
 {
 public:
-    void visit(ast::prog* node) override;
-    void visit(ast::assignStat* node) override;
-    void visit(ast::varDecl* node) override;
     void visit(ast::num* node) override;
+    void visit(ast::type* node) override;
+    void visit(ast::var* node) override;
+    void visit(ast::addOp* node) override;
+    void visit(ast::relOp* node) override;
+    void visit(ast::assignStat* node) override;
+    void visit(ast::returnStat* node) override;
+    void visit(ast::dataMember* node) override;
+    void visit(ast::fCall* node) override;
 };
 
 }}

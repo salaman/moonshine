@@ -2,6 +2,7 @@
 
 #include "moonshine/lexer/Token.h"
 #include "moonshine/semantic/SymbolTable.h"
+#include "moonshine/semantic/Type.h"
 
 #include <memory>
 #include <ostream>
@@ -27,14 +28,19 @@ public:
     void makeSiblings(std::unique_ptr<Node> y);
     void adoptChildren(std::unique_ptr<Node> y);
 
+    Node* parent() const;
     Node* child() const;
     Node* child(const unsigned int& index) const;
+    Node* rightmostChild() const;
+    unsigned int childCount() const;
     Node* next() const;
     virtual bool isLeaf() const;
 
-    virtual void accept(const std::shared_ptr<semantic::Visitor>& visitor) = 0;
+    virtual void accept(semantic::Visitor* visitor) = 0; // TODO: make const param
     std::shared_ptr<semantic::SymbolTable>& symbolTable();
     std::shared_ptr<semantic::SymbolTableEntry>& symbolTableEntry();
+    semantic::VariableType* type() const;
+    void setType(std::unique_ptr<semantic::VariableType> type);
 
     virtual void print(std::ostream* s) const;
     void graphviz(std::ostream& s) const;
@@ -53,6 +59,9 @@ protected:
     // symbol table entries
     std::shared_ptr<semantic::SymbolTable> symbolTable_;
     std::shared_ptr<semantic::SymbolTableEntry> symbolTableEntry_;
+
+    // type checking
+    std::unique_ptr<semantic::VariableType> type_ = nullptr;
 };
 
 class Leaf : public Node
@@ -68,7 +77,7 @@ public:
 
     bool isLeaf() const override;
 
-    void accept(const std::shared_ptr<semantic::Visitor>& visitor) override = 0;
+    void accept(semantic::Visitor* visitor) override = 0;
 
     void print(std::ostream* s) const override;
     void subnodeGraphviz(std::ostream& s) const override;
@@ -82,7 +91,7 @@ class NAME : public Leaf                                                     \
 public:                                                                      \
     explicit NAME(std::shared_ptr<Token>& token) : Leaf(token) {}            \
     inline const char* name() const override { return #NAME; };              \
-    void accept(const std::shared_ptr<semantic::Visitor>& visitor) override; \
+    void accept(semantic::Visitor* visitor) override; \
 };
 
 #define AST(NAME)                                                            \
@@ -90,7 +99,7 @@ class NAME : public Node                                                     \
 {                                                                            \
 public:                                                                      \
     inline const char* name() const override { return #NAME; };              \
-    void accept(const std::shared_ptr<semantic::Visitor>& visitor) override; \
+    void accept(semantic::Visitor* visitor) override; \
 };
 
 #include "ast_nodes.h"

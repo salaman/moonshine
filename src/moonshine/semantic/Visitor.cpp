@@ -1,7 +1,10 @@
 #include "moonshine/semantic/Visitor.h"
 
-#include <iostream>
-
 namespace moonshine { namespace semantic {
+
+void Visitor::setErrorContainer(std::vector<SemanticError>* errors)
+{
+    errors_ = errors;
+}
 
 }}

@@ -66,7 +66,7 @@ SymbolTableEntry* SymbolTable::operator[](const SymbolTableEntry::key_type& name
     }
 
     // check if the parent table has the entry we want
-    if (parent_) {
+    if (parent_ && parent_->parentTable()) {
         return (*parent_->parentTable())[name];
     }
 

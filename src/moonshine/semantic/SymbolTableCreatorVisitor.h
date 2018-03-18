@@ -3,11 +3,6 @@
 #include "moonshine/semantic/Visitor.h"
 #include "moonshine/syntax/Node.h"
 
-#include <memory>
-#include <utility>
-#include <type_traits>
-#include <iostream>
-
 namespace moonshine { namespace semantic {
 
 class SymbolTableCreatorVisitor : public Visitor

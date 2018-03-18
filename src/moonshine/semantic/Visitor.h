@@ -1,11 +1,9 @@
 #pragma once
 
 #include "moonshine/syntax/Node.h"
+#include "moonshine/semantic/SemanticError.h"
 
-#include <memory>
-#include <utility>
-#include <type_traits>
-#include <iostream>
+#include <vector>
 
 namespace moonshine { namespace semantic {
 
@@ -19,6 +17,11 @@ public:
 
     #undef AST
     #undef AST_LEAF
+
+    void setErrorContainer(std::vector<SemanticError>* errors);
+
+protected:
+    std::vector<SemanticError>* errors_ = nullptr;
 };
 
 }}

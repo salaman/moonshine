@@ -41,7 +41,8 @@ set(SOURCE_FILES
         semantic/SymbolTable.cpp
         semantic/SymbolTable.h
         semantic/Type.cpp
-        semantic/Type.h)
+        semantic/Type.h
+        semantic/SemanticError.h)
 
 # define target
 include_directories(${ROOT_INCLUDE_DIR})

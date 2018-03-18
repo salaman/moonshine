@@ -3,6 +3,7 @@
 #include <moonshine/lexer/TokenType.h>
 #include <moonshine/syntax/Grammar.h>
 #include <moonshine/syntax/Parser.h>
+#include <moonshine/semantic/SemanticError.h>
 #include <moonshine/semantic/TypeCheckVisitor.h>
 #include <moonshine/semantic/SymbolTableCreatorVisitor.h>
 
@@ -13,6 +14,7 @@
 #include <sstream>
 #include <cstring>
 #include <memory>
+#include <vector>
 
 using namespace moonshine;
 
@@ -52,19 +54,43 @@ int main(int argc, const char** argv)
         }
     }
 
-    // print the AST tree graphviz output
     if (astRoot) {
+        std::vector<semantic::SemanticError> errors;
+
+        std::vector<std::unique_ptr<semantic::Visitor>> visitors;
+        visitors.emplace_back(new semantic::SymbolTableCreatorVisitor());
+        visitors.emplace_back(new semantic::TypeCheckVisitor());
+
+        for (auto& v : visitors) {
+            v->setErrorContainer(&errors);
+            astRoot->accept(v.get());
+        }
+
+        astRoot->symbolTable()->print(std::cout);
+
+        for (const auto& e : errors) {
+            switch (e.type) {
+                case semantic::SemanticErrorType::UNDECLARED_VARIABLE:
+                    std::cout << "Undeclared variable" << std::endl;
+                    break;
+                case semantic::SemanticErrorType::INCOMPATIBLE_TYPE:
+                    std::cout << "Incompatible type" << std::endl;
+                    break;
+                case semantic::SemanticErrorType::INVALID_SUBSCRIPT_TYPE:
+                    std::cout << "Invalid subscript" << std::endl;
+                    break;
+                case semantic::SemanticErrorType::INVALID_DIMENSION_COUNT:
+                    std::cout << "Invalid dimension count" << std::endl;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        // print the AST tree graphviz output
         std::ofstream astOutput("ast.dot", std::ios::trunc);
         astRoot->graphviz(astOutput);
     }
-
-    astRoot->print(&std::cout); std::cout << std::endl;
-
-    auto visitor = std::make_shared<semantic::SymbolTableCreatorVisitor>();
-
-    astRoot->accept(visitor);
-
-    astRoot->symbolTable()->print(std::cout);
 
     return astRoot == nullptr;
 }

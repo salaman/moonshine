@@ -59,8 +59,8 @@ std::unique_ptr<Node> Node::makeNode(const std::string& name, std::shared_ptr<To
     Node* node = nullptr;
 
     // lazy man's factory construction feat. macro abuse
-    #define AST(NAME) if (name == #NAME) { node = new NAME(); goto found; }
-    #define AST_LEAF(NAME) if (name == #NAME) { node = new NAME(op); goto found; }
+    #define AST(NAME) if (name == #NAME) { node = new ast::NAME(); goto found; }
+    #define AST_LEAF(NAME) if (name == #NAME) { node = new ast::NAME(op); goto found; }
 
     #include "ast_nodes.h"
 
@@ -85,6 +85,11 @@ void Node::makeFamily(std::unique_ptr<Node> op, Args... args)
     }
 }
 
+Node* Node::parent() const
+{
+    return parent_;
+}
+
 Node* Node::child() const
 {
     return leftmostChild_.get();
@@ -99,6 +104,30 @@ Node* Node::child(const unsigned int& index) const
     }
 
     return xsibs;
+}
+
+Node* Node::rightmostChild() const
+{
+    Node* xsibs = child();
+
+    while (xsibs->rightSib_ != nullptr) {
+        xsibs = xsibs->rightSib_.get();
+    }
+
+    return xsibs;
+}
+
+unsigned int Node::childCount() const
+{
+    Node* xsibs = child();
+    unsigned int count = 0;
+
+    while (xsibs != nullptr) {
+        xsibs = xsibs->rightSib_.get();
+        ++count;
+    }
+
+    return count;
 }
 
 Node* Node::next() const
@@ -145,7 +174,13 @@ void Node::subnodeGraphviz(std::ostream& s) const
 
     // print children recursively
     while (xsibs != nullptr) {
-        s << "    " << reinterpret_cast<std::uintptr_t>(xsibs) << R"( [label=")" << xsibs->name() << "\"]";
+        s << "    " << reinterpret_cast<std::uintptr_t>(xsibs) << R"( [label=")" << xsibs->name();// << "\"]";
+
+        if (xsibs->type()) {
+            s << "\\n<" << xsibs->type()->str() << '>';
+        }
+
+        s << "\"]";
 
         if (xsibs->isLeaf()) {
             s << "[style=filled, fillcolor=skyblue]";
@@ -172,6 +207,16 @@ std::shared_ptr<semantic::SymbolTableEntry>& Node::symbolTableEntry()
     return symbolTableEntry_;
 }
 
+semantic::VariableType* Node::type() const
+{
+    return type_.get();
+}
+
+void Node::setType(std::unique_ptr<semantic::VariableType> type)
+{
+    type_ = std::move(type);
+}
+
 bool Leaf::isLeaf() const
 {
     return !leftmostChild_;
@@ -186,13 +231,19 @@ void Leaf::subnodeGraphviz(std::ostream& s) const
 
     // print children recursively
     while (xsibs != nullptr) {
-        s << "    " << reinterpret_cast<std::uintptr_t>(xsibs) << R"( [label=")" << xsibs->name() << "\"]";
+        s << "    " << reinterpret_cast<std::uintptr_t>(xsibs) << R"( [label=")" << xsibs->name();// << "\"]";
+
+        if (xsibs->type() != nullptr) {
+            s << "\\n<" << xsibs->type()->str() << '>';
+        }
+
+        s << "\"]";
 
         if (xsibs->isLeaf()) {
             s << "[style=filled, fillcolor=skyblue]";
         }
 
-        s << std::endl << "    " << reinterpret_cast<std::uintptr_t>(xsibs) << R"( [label=")" << xsibs->name() << "\"]" << std::endl;
+        s << std::endl;
         s << "    " << reinterpret_cast<std::uintptr_t>(this) << " -> " << reinterpret_cast<std::uintptr_t>(xsibs) << std::endl;
         xsibs->subnodeGraphviz(s);
         xsibs = xsibs->next();
@@ -209,29 +260,29 @@ void Leaf::print(std::ostream* s) const
 }
 
 #define AST(NAME) \
-void NAME::accept(const std::shared_ptr<semantic::Visitor>& visitor) \
-{                                                                    \
-    Node* xsibs = child();                                           \
-                                                                     \
-    while (xsibs != nullptr) {                                       \
-        xsibs->accept(visitor);                                      \
-        xsibs = xsibs->next();                                       \
-    }                                                                \
-                                                                     \
-    visitor->visit(this);                                            \
+void NAME::accept(semantic::Visitor* visitor) \
+{                                             \
+    Node* xsibs = child();                    \
+                                              \
+    while (xsibs != nullptr) {                \
+        xsibs->accept(visitor);               \
+        xsibs = xsibs->next();                \
+    }                                         \
+                                              \
+    visitor->visit(this);                     \
 }
 
 #define AST_LEAF(NAME) \
-void NAME::accept(const std::shared_ptr<semantic::Visitor>& visitor) \
-{                                                                    \
-    Node* xsibs = child();                                           \
-                                                                     \
-    while (xsibs != nullptr) {                                       \
-        xsibs->accept(visitor);                                      \
-        xsibs = xsibs->next();                                       \
-    }                                                                \
-                                                                     \
-    visitor->visit(this);                                            \
+void NAME::accept(semantic::Visitor* visitor) \
+{                                             \
+    Node* xsibs = child();                    \
+                                              \
+    while (xsibs != nullptr) {                \
+        xsibs->accept(visitor);               \
+        xsibs = xsibs->next();                \
+    }                                         \
+                                              \
+    visitor->visit(this);                     \
 }
 
 #include "ast_nodes.h"

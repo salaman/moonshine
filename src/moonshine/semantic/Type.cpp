@@ -6,8 +6,8 @@ namespace moonshine { namespace semantic {
 
 bool VariableType::compare(const SymbolType& rhs) const
 {
-    if (const VariableType* p = dynamic_cast<const VariableType*>(&rhs)) {
-        return type == p->type;
+    if (auto p = dynamic_cast<const VariableType*>(&rhs)) {
+        return type == p->type && indices == p->indices;
     }
 
     return false;
@@ -27,6 +27,9 @@ std::string VariableType::str() const
         case Type::CLASS:
             s << className;
             break;
+        case Type::ERROR:
+            s << "ERR";
+            break;
     }
 
     for (const auto& i : indices) {
@@ -38,8 +41,8 @@ std::string VariableType::str() const
 
 bool FunctionType::compare(const SymbolType& rhs) const
 {
-    if (const FunctionType* p = dynamic_cast<const FunctionType*>(&rhs)) {
-        return returnType == p->returnType; // TODO: params
+    if (auto p = dynamic_cast<const FunctionType*>(&rhs)) {
+        return returnType == p->returnType && parameterTypes == p->parameterTypes;
     }
 
     return false;

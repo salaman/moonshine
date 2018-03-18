@@ -9,7 +9,8 @@ enum class Type
 {
     INT,
     FLOAT,
-    CLASS
+    CLASS,
+    ERROR
 };
 
 struct SymbolType
@@ -18,6 +19,10 @@ struct SymbolType
 
     friend bool operator==(const SymbolType& lhs, const SymbolType& rhs) {
         return lhs.compare(rhs);
+    }
+
+    friend bool operator!=(const SymbolType& lhs, const SymbolType& rhs) {
+        return !(lhs == rhs);
     }
 
 protected:
@@ -31,6 +36,15 @@ struct VariableType : public SymbolType
     std::vector<unsigned int> indices;
 
     std::string str() const override;
+
+    inline bool isError() const {
+        return type == Type::ERROR;
+    }
+
+    inline bool isNotError() const {
+        return !isError();
+    }
+
 protected:
     bool compare(const SymbolType& rhs) const override;
 };
