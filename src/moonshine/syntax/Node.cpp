@@ -75,16 +75,6 @@ found:
     return std::unique_ptr<Node>{node};
 }
 
-template<typename... Args>
-void Node::makeFamily(std::unique_ptr<Node> op, Args... args)
-{
-    std::vector<std::unique_ptr<Node>> kids = {args...};
-
-    for (auto& kid : kids) {
-        op->adoptChildren(std::move(kid));
-    }
-}
-
 Node* Node::parent() const
 {
     return parent_;
@@ -215,6 +205,18 @@ semantic::VariableType* Node::type() const
 void Node::setType(std::unique_ptr<semantic::VariableType> type)
 {
     type_ = std::move(type);
+}
+
+std::shared_ptr<semantic::SymbolTable> Node::closestSymbolTable()
+{
+    Node* curNode = this;
+
+    // find closest symbol table
+    while (curNode != nullptr && !curNode->symbolTable()) {
+        curNode = curNode->parent();
+    }
+
+    return curNode != nullptr ? curNode->symbolTable() : nullptr;
 }
 
 bool Leaf::isLeaf() const

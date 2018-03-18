@@ -22,9 +22,6 @@ public:
 
     static std::unique_ptr<Node> makeNode(const std::string& name, std::shared_ptr<Token>& op);
 
-    template<typename... Args>
-    static void makeFamily(std::unique_ptr<Node> op, Args... args);
-
     void makeSiblings(std::unique_ptr<Node> y);
     void adoptChildren(std::unique_ptr<Node> y);
 
@@ -38,6 +35,7 @@ public:
 
     virtual void accept(semantic::Visitor* visitor) = 0; // TODO: make const param
     std::shared_ptr<semantic::SymbolTable>& symbolTable();
+    std::shared_ptr<semantic::SymbolTable> closestSymbolTable();
     std::shared_ptr<semantic::SymbolTableEntry>& symbolTableEntry();
     semantic::VariableType* type() const;
     void setType(std::unique_ptr<semantic::VariableType> type);

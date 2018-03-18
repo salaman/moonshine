@@ -64,11 +64,18 @@ void SymbolTableCreatorVisitor::visit(ast::statBlock* node)
     Visitor::visit(node);
     std::cout << "SymbolTableCreatorVisitor::visit(statBlock)" << std::endl;
 
-    node->symbolTable() = std::make_shared<SymbolTable>();
+    // create a new symbol table for this scope
+    std::shared_ptr<SymbolTable> table = node->symbolTable() = std::make_shared<SymbolTable>();
 
+    // merge entries for each child node (ie. statement)
     for (ast::Node* n = node->child(); n != nullptr; n = n->next()) {
         if (n->symbolTableEntry()) {
-            node->symbolTable()->addEntry(n->symbolTableEntry());
+            // check if this symbol has been previously declared in this scope
+            if ((*table)[n->symbolTableEntry()->name()]) {
+                errors_->emplace_back(SemanticErrorType::REDECLARED_SYMBOL);
+            } else {
+                table->addEntry(n->symbolTableEntry());
+            }
         }
     }
 }

@@ -8,22 +8,30 @@
 namespace moonshine { namespace semantic {
 
 enum class SemanticErrorType {
-    NONE = 0,
-
     UNDECLARED_VARIABLE,
+    REDECLARED_SYMBOL,
     INCOMPATIBLE_TYPE,
     INVALID_SUBSCRIPT_TYPE,
     INVALID_DIMENSION_COUNT,
 };
 
+enum class SemanticErrorLevel {
+    ERROR,
+    WARN,
+};
+
 struct SemanticError
 {
     explicit SemanticError(const SemanticErrorType& type_)
-        : type(type_)
+        : SemanticError(type_, SemanticErrorLevel::ERROR)
+    {}
+
+    SemanticError(const SemanticErrorType& type_, const SemanticErrorLevel& level_)
+        : type(type_), level(level_)
     {}
 
     const SemanticErrorType type;
-    //const std::shared_ptr<Token> token;
+    const SemanticErrorLevel level;
 };
 
 }}

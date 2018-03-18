@@ -47,6 +47,19 @@ void TypeCheckVisitor::visit(ast::addOp* node)
     }
 }
 
+void TypeCheckVisitor::visit(ast::multOp* node)
+{
+    Visitor::visit(node);
+
+    if (*node->child(0)->type() == *node->child(1)->type()) {
+        node->setType(std::unique_ptr<VariableType>(new VariableType(*node->child(0)->type())));
+    } else {
+        std::unique_ptr<VariableType> type(new VariableType());
+        type->type = Type::ERROR;
+        node->setType(std::move(type));
+    }
+}
+
 void TypeCheckVisitor::visit(ast::type* node)
 {
     Visitor::visit(node);
@@ -88,13 +101,7 @@ void TypeCheckVisitor::visit(ast::dataMember* node)
     Visitor::visit(node);
 
     // find closest symbol table
-    std::shared_ptr<SymbolTable> table = node->symbolTable();
-    ast::Node* curNode = node;
-
-    while (!table && curNode) {
-        curNode = curNode->parent();
-        table = curNode->symbolTable();
-    }
+    std::shared_ptr<SymbolTable> table = node->closestSymbolTable();
 
     if (!table) {
         throw std::runtime_error("TypeCheckVisitor::visit(id): No symbol table exists");
@@ -108,12 +115,10 @@ void TypeCheckVisitor::visit(ast::dataMember* node)
 
     if (entry && (p = dynamic_cast<VariableType*>(entry->type()))) {
         // if we find it, set our type to a copy of its type
-        //std::unique_ptr<VariableType> type(new VariableType(*p));
         std::unique_ptr<VariableType> type(new VariableType());
 
         auto indiceCount = node->child(1)->childCount();
 
-        // TODO: check that each index <= dimsize
         if (p->indices.size() != indiceCount) {
             type->type = Type::ERROR;
             errors_->emplace_back(SemanticErrorType::INVALID_DIMENSION_COUNT);
@@ -138,6 +143,18 @@ void TypeCheckVisitor::visit(ast::fCall* node)
     std::unique_ptr<VariableType> type(new VariableType());
     type->type = Type::ERROR;
     node->setType(std::move(type));
+}
+
+void TypeCheckVisitor::visit(ast::indexList* node)
+{
+    Visitor::visit(node);
+
+    // dimList
+    for (auto n = node->child(); n != nullptr; n = n->next()) {
+        if (n->type()->type != Type::INT) {
+            errors_->emplace_back(SemanticErrorType::INVALID_SUBSCRIPT_TYPE);
+        }
+    }
 }
 
 }}

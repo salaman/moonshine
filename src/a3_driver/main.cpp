@@ -69,6 +69,15 @@ int main(int argc, const char** argv)
         astRoot->symbolTable()->print(std::cout);
 
         for (const auto& e : errors) {
+            switch (e.level) {
+                case semantic::SemanticErrorLevel::ERROR:
+                    std::cout << "[ERROR] ";
+                    break;
+                case semantic::SemanticErrorLevel::WARN:
+                    std::cout << "[WARN] ";
+                    break;
+            }
+
             switch (e.type) {
                 case semantic::SemanticErrorType::UNDECLARED_VARIABLE:
                     std::cout << "Undeclared variable" << std::endl;
@@ -82,7 +91,8 @@ int main(int argc, const char** argv)
                 case semantic::SemanticErrorType::INVALID_DIMENSION_COUNT:
                     std::cout << "Invalid dimension count" << std::endl;
                     break;
-                default:
+                case semantic::SemanticErrorType::REDECLARED_SYMBOL:
+                    std::cout << "Redeclared symbol" << std::endl;
                     break;
             }
         }

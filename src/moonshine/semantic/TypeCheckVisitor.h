@@ -17,11 +17,13 @@ public:
     void visit(ast::type* node) override;
     void visit(ast::var* node) override;
     void visit(ast::addOp* node) override;
+    void visit(ast::multOp* node) override;
     void visit(ast::relOp* node) override;
     void visit(ast::assignStat* node) override;
     void visit(ast::returnStat* node) override;
     void visit(ast::dataMember* node) override;
     void visit(ast::fCall* node) override;
+    void visit(ast::indexList* node) override;
 };
 
 }}
