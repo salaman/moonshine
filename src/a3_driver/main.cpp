@@ -111,6 +111,21 @@ int main(int argc, const char** argv)
                 case semantic::SemanticErrorType::INVALID_FUNCTION:
                     std::cout << "Invalid function" << std::endl;
                     break;
+                case semantic::SemanticErrorType::UNDEFINED_FUNCTION:
+                    std::cout << "Undefined function" << std::endl;
+                    break;
+                case semantic::SemanticErrorType::REDEFINED_FUNCTION:
+                    std::cout << "Redefined function" << std::endl;
+                    break;
+                case semantic::SemanticErrorType::INCOMPATIBLE_RETURN_TYPE:
+                    std::cout << "Incompatible return type" << std::endl;
+                    break;
+                case semantic::SemanticErrorType::SHADOWED_VARIABLE:
+                    std::cout << "Shadowed variable" << std::endl;
+                    break;
+                case semantic::SemanticErrorType::MISSING_RETURN:
+                    std::cout << "Missing return" << std::endl;
+                    break;
             }
         }
 

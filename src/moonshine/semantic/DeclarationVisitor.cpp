@@ -150,15 +150,36 @@ void DeclarationVisitor::visit(ast::funcDef* node)
 
     if (type->scope.empty()) {
         // this function definition is a free function in the global symbol table
-        // TODO: redecl check
-        parentTable->addEntry(node->symbolTableEntry());
+
+        if ((*parentTable)[node->symbolTableEntry()->name()]) {
+            // an entry for this function already exists
+            // TODO: signature
+            errors_->emplace_back(SemanticErrorType::REDEFINED_FUNCTION);
+        } else {
+            // this is the first definition
+            parentTable->addEntry(node->symbolTableEntry());
+        }
     } else {
         // this function definition is for a class member function
         auto classTable = (*parentTable)[type->scope]->link();
 
         // find the function entry in the class' symbol table
         if (auto entry = (*classTable)[node->symbolTableEntry()->name()]) {
-            entry->setLink(node->symbolTableEntry()->link());
+
+            // check if a symbol table exists for this entry already
+            if (entry->link()) {
+                // if it does, this is a redefinition
+                // TODO: signature
+                errors_->emplace_back(SemanticErrorType::REDEFINED_FUNCTION);
+            } else {
+                // else, set the class's function entry's symbol table to this one
+                entry->setLink(node->symbolTable());
+
+                // and set funcDef's entry to the new one (the old one is abandoned and unused)
+                // this is so future visitors can properly refer to this node's entry
+                node->symbolTableEntry() = entry;
+            }
+
         } else {
             errors_->emplace_back(SemanticErrorType::UNDECLARED_FUNCTION);
         }
@@ -351,6 +372,31 @@ void DeclarationVisitor::visit(ast::fCall* node)
         varNode->setType(std::move(type));
         errors_->emplace_back(SemanticErrorType::INVALID_FUNCTION);
     }
+}
+
+void DeclarationVisitor::visit(ast::returnStat* node)
+{
+    Visitor::visit(node);
+
+    // find the symbol table for the function we're in
+    auto table = node->closestSymbolTable().get();
+    while (table && table->parentEntry()->kind() != SymbolTableEntryKind::FUNCTION) {
+        table = table->parentEntry()->parentTable();
+    }
+
+    if (!table) {
+        throw std::runtime_error("TypeCheckVisitor::visit(returnStat): No symbol table exists");
+    }
+
+    // get the function's type
+    auto type = dynamic_cast<FunctionType*>(table->parentEntry()->type());
+
+    if (!type) {
+        throw std::runtime_error("TypeCheckVisitor::visit(returnStat): Invalid function type");
+    }
+
+    // mark return exists
+    table->parentEntry()->setHasReturn(true);
 }
 
 }}

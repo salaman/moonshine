@@ -11,6 +11,27 @@
 
 namespace moonshine { namespace semantic {
 
+void TypeCheckVisitor::visit(ast::prog* node)
+{
+    Visitor::visit(node);
+
+    // check that all member functions have been defined
+    for (auto it = node->symbolTable()->begin(); it != node->symbolTable()->end(); ++it) {
+        // find classes in global table
+        if (it->second->kind() == SymbolTableEntryKind::CLASS) {
+            auto classTable = it->second->link();
+
+            // find functions in class table
+            for (auto entry = classTable->begin(); entry != classTable->end(); ++entry) {
+                // ensure the function has a symbol table link
+                if (entry->second->kind() == SymbolTableEntryKind::FUNCTION && !entry->second->link()) {
+                    errors_->emplace_back(SemanticErrorType::UNDEFINED_FUNCTION);
+                }
+            }
+        }
+    }
+}
+
 void TypeCheckVisitor::visit(ast::assignStat* node)
 {
     Visitor::visit(node);
@@ -27,6 +48,29 @@ void TypeCheckVisitor::visit(ast::assignStat* node)
 void TypeCheckVisitor::visit(ast::returnStat* node)
 {
     Visitor::visit(node);
+
+    // find the symbol table for the function we're in
+    auto table = node->closestSymbolTable().get();
+    while (table && table->parentEntry()->kind() != SymbolTableEntryKind::FUNCTION) {
+        table = table->parentEntry()->parentTable();
+    }
+
+    if (!table) {
+        throw std::runtime_error("TypeCheckVisitor::visit(returnStat): No symbol table exists");
+    }
+
+    // get the function's type
+    auto type = dynamic_cast<FunctionType*>(table->parentEntry()->type());
+
+    if (!type) {
+        throw std::runtime_error("TypeCheckVisitor::visit(returnStat): Invalid function type");
+    }
+
+    // check that the return type matches the function's expected return type
+    // only emit an error if the child is not already an error
+    if (*node->child()->type() != type->returnType && node->child()->type()->isNotError()) {
+        errors_->emplace_back(SemanticErrorType::INCOMPATIBLE_RETURN_TYPE);
+    }
 }
 
 void TypeCheckVisitor::visit(ast::relOp* node)
@@ -136,6 +180,24 @@ void TypeCheckVisitor::visit(ast::sign* node)
     // bubble up child type
     std::unique_ptr<VariableType> type(new VariableType(*node->child()->type()));
     node->setType(std::move(type));
+}
+
+void TypeCheckVisitor::visit(ast::funcDef* node)
+{
+    Visitor::visit(node);
+
+    // ensure the function has a return if it needs one
+
+    auto entry = node->symbolTableEntry();
+    auto type = dynamic_cast<FunctionType*>(entry->type());
+
+    if (type != nullptr && type->returnType.isNotError() && !entry->hasReturn()) {
+        // this function needs a return and does not have one
+        errors_->emplace_back(SemanticErrorType::MISSING_RETURN);
+    } else if (type == nullptr && entry->hasReturn()) {
+        // this function has a return but can't have one
+        errors_->emplace_back(SemanticErrorType::INVALID_RETURN);
+    }
 }
 
 }}

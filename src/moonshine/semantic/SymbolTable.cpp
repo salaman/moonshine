@@ -56,13 +56,13 @@ void SymbolTableEntry::setLink(const std::shared_ptr<SymbolTable>& link)
     link_->setParentEntry(this);
 }
 
-SymbolTableEntry* SymbolTable::operator[](const SymbolTableEntry::key_type& name)
+std::shared_ptr<SymbolTableEntry> SymbolTable::operator[](const SymbolTableEntry::key_type& name)
 {
     auto entry = entries_.find(name);
 
     // we found the entry in this table
     if (entry != entries_.end()) {
-        return entry->second.get();
+        return entry->second;
     }
 
     // check if the parent table has the entry we want
@@ -192,6 +192,16 @@ SymbolTable* SymbolTableEntry::parentTable() const
 void SymbolTableEntry::setParent(SymbolTable* parent)
 {
     parent_ = parent;
+}
+
+bool SymbolTableEntry::hasReturn() const
+{
+    return hasReturn_;
+}
+
+void SymbolTableEntry::setHasReturn(const bool& hasReturn)
+{
+    hasReturn_ = hasReturn;
 }
 
 }}

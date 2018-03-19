@@ -21,6 +21,7 @@ public:
     void visit(ast::funcDef* node) override;
     void visit(ast::dataMember* node) override;
     void visit(ast::fCall* node) override;
+    void visit(ast::returnStat* node) override;
 private:
     void nodeToVariableType(VariableType& type, const ast::Node* node) const;
 };

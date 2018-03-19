@@ -34,17 +34,20 @@ public:
     SymbolTableEntryKind kind() const;
     weak_type_type type() const;
     table_type link() const;
+    bool hasReturn() const;
     void setName(const key_type& name);
     void setKind(const SymbolTableEntryKind& kind);
     void setType(type_type type);
     void setLink(const std::shared_ptr<SymbolTable>& link);
     void setParent(SymbolTable* parent);
+    void setHasReturn(const bool& hasReturn);
 private:
     key_type name_;
     SymbolTableEntryKind kind_;
     type_type type_;
     table_type link_;
     SymbolTable* parent_ = nullptr;
+    bool hasReturn_ = false;
 
     friend class CompareSymbolTableEntry;
 };
@@ -70,13 +73,13 @@ public:
     void setParentEntry(SymbolTableEntry* parent);
 
     SymbolTableEntry* parentEntry() const;
-    SymbolTableEntry* operator[](const SymbolTableEntry::key_type& name);
+    std::shared_ptr<SymbolTableEntry> operator[](const SymbolTableEntry::key_type& name);
     void addEntry(const std::shared_ptr<SymbolTableEntry>& entry);
 
     map_type::iterator begin();
     map_type::iterator end();
 
-    void print(std::ostream& s) const;
+    void print(std::ostream& s, const int& level, std::string pad) const;
 private:
     // TODO: unordered_multimap?
     std::unordered_map<SymbolTableEntry::key_type, std::shared_ptr<SymbolTableEntry>> entries_;
