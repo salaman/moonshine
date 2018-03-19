@@ -94,6 +94,9 @@ int main(int argc, const char** argv)
                 case semantic::SemanticErrorType::REDECLARED_SYMBOL:
                     std::cout << "Redeclared symbol" << std::endl;
                     break;
+                case semantic::SemanticErrorType::UNDECLARED_FUNCTION:
+                    std::cout << "Undeclared function" << std::endl;
+                    break;
             }
         }
 

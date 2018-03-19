@@ -26,12 +26,13 @@ public:
     typedef std::string key_type;
     typedef std::unique_ptr<SymbolType> type_type;
     typedef SymbolType* weak_type_type;
+    typedef std::shared_ptr<SymbolTable> table_type;
 
     SymbolTable* parentTable() const;
     key_type name() const;
     SymbolTableEntryKind kind() const;
     weak_type_type type() const;
-    SymbolTable* link() const;
+    table_type link() const;
     void setName(const key_type& name);
     void setKind(const SymbolTableEntryKind& kind);
     void setType(type_type type);
@@ -40,7 +41,7 @@ private:
     key_type name_;
     SymbolTableEntryKind kind_;
     type_type type_;
-    std::shared_ptr<SymbolTable> link_;
+    table_type link_;
     SymbolTable* parent_ = nullptr;
 
     friend class CompareSymbolTableEntry;

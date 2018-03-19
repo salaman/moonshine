@@ -53,6 +53,7 @@ struct FunctionType : public SymbolType
 {
     VariableType returnType;
     std::vector<VariableType> parameterTypes;
+    std::string scope;
 
     std::string str() const override;
 protected:

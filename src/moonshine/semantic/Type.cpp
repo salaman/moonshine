@@ -61,6 +61,10 @@ std::string FunctionType::str() const
         }
     }
 
+    if (parameterTypes.empty()) {
+        s << "nil";
+    }
+
     return s.str();
 }
 

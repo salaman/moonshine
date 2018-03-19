@@ -26,9 +26,9 @@ SymbolTableEntry::weak_type_type SymbolTableEntry::type() const
     return type_.get();
 }
 
-SymbolTable* SymbolTableEntry::link() const
+SymbolTableEntry::table_type SymbolTableEntry::link() const
 {
-    return link_.get();
+    return link_;
 }
 
 void SymbolTableEntry::setName(const SymbolTableEntry::key_type& name)
