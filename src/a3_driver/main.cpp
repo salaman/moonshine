@@ -99,6 +99,18 @@ int main(int argc, const char** argv)
                 case semantic::SemanticErrorType::UNDECLARED_FUNCTION:
                     std::cout << "Undeclared function" << std::endl;
                     break;
+                case semantic::SemanticErrorType::INVALID_VARIABLE:
+                    std::cout << "Invalid variable" << std::endl;
+                    break;
+                case semantic::SemanticErrorType::UNDECLARED_MEMBER_VARIABLE:
+                    std::cout << "Undeclared member variable" << std::endl;
+                    break;
+                case semantic::SemanticErrorType::UNDECLARED_MEMBER_FUNCTION:
+                    std::cout << "Undeclared member function" << std::endl;
+                    break;
+                case semantic::SemanticErrorType::INVALID_FUNCTION:
+                    std::cout << "Invalid function" << std::endl;
+                    break;
             }
         }
 

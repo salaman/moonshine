@@ -9,11 +9,15 @@ namespace moonshine { namespace semantic {
 
 enum class SemanticErrorType {
     UNDECLARED_VARIABLE,
+    UNDECLARED_MEMBER_VARIABLE,
+    UNDECLARED_MEMBER_FUNCTION,
     UNDECLARED_FUNCTION,
     REDECLARED_SYMBOL,
     INCOMPATIBLE_TYPE,
     INVALID_SUBSCRIPT_TYPE,
     INVALID_DIMENSION_COUNT,
+    INVALID_VARIABLE,
+    INVALID_FUNCTION,
 };
 
 enum class SemanticErrorLevel {

@@ -14,17 +14,14 @@ public:
         return VisitorOrder::PREORDER;
     }
 
-    void visit(ast::prog* node) override;
-    void visit(ast::statBlock* node) override;
     void visit(ast::varDecl* node) override;
     void visit(ast::forStat* node) override;
     void visit(ast::classDecl* node) override;
     void visit(ast::funcDecl* node) override;
     void visit(ast::funcDef* node) override;
-    void visit(ast::fparamList* node) override;
-    void visit(ast::var* node) override;
+    void visit(ast::dataMember* node) override;
+    void visit(ast::fCall* node) override;
 private:
-    void statBlockToSymbolTable(SymbolTable& table, ast::statBlock* node) const;
     void nodeToVariableType(VariableType& type, const ast::Node* node) const;
 };
 

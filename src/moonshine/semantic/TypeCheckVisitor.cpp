@@ -15,7 +15,11 @@ void TypeCheckVisitor::visit(ast::assignStat* node)
 {
     Visitor::visit(node);
 
-    if (*node->child(0)->type() != *node->child(1)->type()) {
+    // ensure that lhs and rhs share the same type
+    // only report an error if the types aren't errors themselves to prevent error spam
+    if (*node->child(0)->type() != *node->child(1)->type()
+        && node->child(0)->type()->isNotError()
+        && node->child(1)->type()->isNotError()) {
         errors_->emplace_back(SemanticErrorType::INCOMPATIBLE_TYPE);
     }
 }
@@ -29,8 +33,14 @@ void TypeCheckVisitor::visit(ast::relOp* node)
 {
     Visitor::visit(node);
 
-    if (*node->child(0)->type() != *node->child(1)->type()) {
-        errors_->emplace_back(SemanticErrorType::INCOMPATIBLE_TYPE);
+    // if lhs and rhs are not of the same type, error
+    // only report an error if the types aren't errors themselves to prevent error spam
+    if (*node->child(0)->type() != *node->child(1)->type()
+        && node->child(0)->type()->isNotError()
+        && node->child(1)->type()->isNotError()) {
+        std::unique_ptr<VariableType> type(new VariableType());
+        type->type = Type::ERROR;
+        node->setType(std::move(type));
     }
 }
 
@@ -39,11 +49,18 @@ void TypeCheckVisitor::visit(ast::addOp* node)
     Visitor::visit(node);
 
     if (*node->child(0)->type() == *node->child(1)->type()) {
+        // if lhs and rhs are of the same type, set the op's type to the same one
         node->setType(std::unique_ptr<VariableType>(new VariableType(*node->child(0)->type())));
     } else {
+        // else, set it to error
         std::unique_ptr<VariableType> type(new VariableType());
         type->type = Type::ERROR;
         node->setType(std::move(type));
+
+        // only report an error if the types aren't errors themselves to prevent error spam
+        if (node->child(0)->type()->isNotError() && node->child(1)->type()->isNotError()) {
+            errors_->emplace_back(SemanticErrorType::INCOMPATIBLE_TYPE);
+        }
     }
 }
 
@@ -52,17 +69,22 @@ void TypeCheckVisitor::visit(ast::multOp* node)
     Visitor::visit(node);
 
     if (*node->child(0)->type() == *node->child(1)->type()) {
+        // if lhs and rhs are of the same type, set the op's type to the same one
         node->setType(std::unique_ptr<VariableType>(new VariableType(*node->child(0)->type())));
     } else {
         std::unique_ptr<VariableType> type(new VariableType());
         type->type = Type::ERROR;
         node->setType(std::move(type));
-    }
-}
 
-void TypeCheckVisitor::visit(ast::type* node)
-{
-    Visitor::visit(node);
+        if (!node->child(0)->type() || !node->child(1)->type()) {
+            node->marked = true;
+        } else
+
+        // only report an error if the types aren't errors themselves to prevent error spam
+        if (node->child(0)->type()->isNotError() && node->child(1)->type()->isNotError()) {
+            errors_->emplace_back(SemanticErrorType::INCOMPATIBLE_TYPE);
+        }
+    }
 }
 
 void TypeCheckVisitor::visit(ast::num* node)
@@ -86,65 +108,6 @@ void TypeCheckVisitor::visit(ast::num* node)
     node->setType(std::move(type));
 }
 
-void TypeCheckVisitor::visit(ast::var* node)
-{
-    Visitor::visit(node);
-
-    // a var's type is its rightmost data member's type
-    ast::Node* rightmostChild = node->rightmostChild();
-
-    node->setType(std::unique_ptr<VariableType>(new VariableType(*rightmostChild->type())));
-}
-
-void TypeCheckVisitor::visit(ast::dataMember* node)
-{
-    Visitor::visit(node);
-
-    // find closest symbol table
-    std::shared_ptr<SymbolTable> table = node->closestSymbolTable();
-
-    if (!table) {
-        throw std::runtime_error("TypeCheckVisitor::visit(id): No symbol table exists");
-    }
-
-    auto idNode = dynamic_cast<ast::id*>(node->child(0));
-
-    // locate the entry for this id in the symtab
-    auto entry = (*table)[idNode->token()->value];
-    VariableType* p;
-
-    if (entry && (p = dynamic_cast<VariableType*>(entry->type()))) {
-        // if we find it, set our type to a copy of its type
-        std::unique_ptr<VariableType> type(new VariableType());
-
-        auto indiceCount = node->child(1)->childCount();
-
-        if (p->indices.size() != indiceCount) {
-            type->type = Type::ERROR;
-            errors_->emplace_back(SemanticErrorType::INVALID_DIMENSION_COUNT);
-        } else {
-            type->type = p->type;
-        }
-
-        node->setType(std::move(type));
-    } else {
-        // else, this is an error
-        std::unique_ptr<VariableType> type(new VariableType());
-        type->type = Type::ERROR;
-        node->setType(std::move(type));
-    }
-}
-
-void TypeCheckVisitor::visit(ast::fCall* node)
-{
-    Visitor::visit(node);
-
-    // TODO
-    std::unique_ptr<VariableType> type(new VariableType());
-    type->type = Type::ERROR;
-    node->setType(std::move(type));
-}
-
 void TypeCheckVisitor::visit(ast::indexList* node)
 {
     Visitor::visit(node);
@@ -155,6 +118,24 @@ void TypeCheckVisitor::visit(ast::indexList* node)
             errors_->emplace_back(SemanticErrorType::INVALID_SUBSCRIPT_TYPE);
         }
     }
+}
+
+void TypeCheckVisitor::visit(ast::notFactor* node)
+{
+    Visitor::visit(node);
+
+    // bubble up child type
+    std::unique_ptr<VariableType> type(new VariableType(*node->child()->type()));
+    node->setType(std::move(type));
+}
+
+void TypeCheckVisitor::visit(ast::sign* node)
+{
+    Visitor::visit(node);
+
+    // bubble up child type
+    std::unique_ptr<VariableType> type(new VariableType(*node->child()->type()));
+    node->setType(std::move(type));
 }
 
 }}
