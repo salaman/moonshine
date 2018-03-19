@@ -7,9 +7,20 @@
 
 namespace moonshine { namespace semantic {
 
+enum class VisitorOrder
+{
+    POSTORDER,
+    PREORDER
+};
+
 class Visitor
 {
 public:
+    inline virtual VisitorOrder order()
+    {
+        return VisitorOrder::POSTORDER;
+    }
+
     #define AST(NAME) virtual void visit(ast::NAME* node) {}
     #define AST_LEAF(NAME) virtual void visit(ast::NAME* node) {}
 

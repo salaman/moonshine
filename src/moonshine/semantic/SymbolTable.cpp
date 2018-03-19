@@ -77,6 +77,7 @@ SymbolTableEntry* SymbolTable::operator[](const SymbolTableEntry::key_type& name
 void SymbolTable::addEntry(const std::shared_ptr<SymbolTableEntry>& entry)
 {
     entries_[entry->name()] = entry;
+    entry->setParent(this);
 }
 
 void SymbolTable::print(std::ostream& s) const
@@ -136,6 +137,9 @@ void SymbolTable::print(std::ostream& s) const
             case SymbolTableEntryKind::VARIABLE:
                 s << "variable";
                 break;
+            case SymbolTableEntryKind::BLOCK:
+                s << "block";
+                break;
         }
         s << "│";
 
@@ -183,6 +187,11 @@ void SymbolTable::setParentEntry(SymbolTableEntry* parent)
 SymbolTable* SymbolTableEntry::parentTable() const
 {
     return parent_;
+}
+
+void SymbolTableEntry::setParent(SymbolTable* parent)
+{
+    parent_ = parent;
 }
 
 }}

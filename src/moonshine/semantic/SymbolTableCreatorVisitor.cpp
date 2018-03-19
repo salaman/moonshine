@@ -17,38 +17,38 @@ void SymbolTableCreatorVisitor::visit(ast::prog* node)
     auto table = node->symbolTable() = std::make_shared<SymbolTable>();
 
     // create entries for class declarations
-    for (ast::Node* n = node->child(0)->child(); n != nullptr; n = n->next()) {
-        if (n->symbolTableEntry()) {
-            // TODO: redeclaration check
-
-            node->symbolTable()->addEntry(n->symbolTableEntry());
-        }
-    }
+    //for (ast::Node* n = node->child(0)->child(); n != nullptr; n = n->next()) {
+    //    if (n->symbolTableEntry()) {
+    //        // TODO: redeclaration check
+    //
+    //        node->symbolTable()->addEntry(n->symbolTableEntry());
+    //    }
+    //}
 
     // create entries for function definitions
-    for (ast::Node* n = node->child(1)->child(); n != nullptr; n = n->next()) {
-        if (n->symbolTableEntry()) {
-            // TODO: redeclaration check
-            // TODO: check parameters match
-
-            auto type = dynamic_cast<FunctionType*>(n->symbolTableEntry()->type());
-
-            if (type->scope.empty()) {
-                // this function definition is a free function in the global symbol table
-                node->symbolTable()->addEntry(n->symbolTableEntry());
-            } else {
-                // this function definition is for a class member function
-                auto classTable = (*table)[type->scope]->link();
-
-                // find the function entry in the class' symbol table
-                if (auto entry = (*classTable)[n->symbolTableEntry()->name()]) {
-                    entry->setLink(n->symbolTableEntry()->link());
-                } else {
-                    errors_->emplace_back(SemanticErrorType::UNDECLARED_FUNCTION);
-                }
-            }
-        }
-    }
+    //for (ast::Node* n = node->child(1)->child(); n != nullptr; n = n->next()) {
+    //    if (n->symbolTableEntry()) {
+    //        // TODO: redeclaration check
+    //        // TODO: check parameters match
+    //
+    //        auto type = dynamic_cast<FunctionType*>(n->symbolTableEntry()->type());
+    //
+    //        if (type->scope.empty()) {
+    //            // this function definition is a free function in the global symbol table
+    //            node->symbolTable()->addEntry(n->symbolTableEntry());
+    //        } else {
+    //            // this function definition is for a class member function
+    //            auto classTable = (*table)[type->scope]->link();
+    //
+    //            // find the function entry in the class' symbol table
+    //            if (auto entry = (*classTable)[n->symbolTableEntry()->name()]) {
+    //                entry->setLink(n->symbolTableEntry()->link());
+    //            } else {
+    //                errors_->emplace_back(SemanticErrorType::UNDECLARED_FUNCTION);
+    //            }
+    //        }
+    //    }
+    //}
 
     // TODO: check that all functions have been defined
 
@@ -57,8 +57,8 @@ void SymbolTableCreatorVisitor::visit(ast::prog* node)
     program->setName("program");
     program->setKind(SymbolTableEntryKind::FUNCTION);
     //program->setLink(node->child(2)->symbolTable());
-    std::shared_ptr<SymbolTable> programTable = std::make_shared<SymbolTable>();
-    statBlockToSymbolTable(*programTable, dynamic_cast<ast::statBlock*>(node->child(2)));
+    auto programTable = node->child(2)->symbolTable() = std::make_shared<SymbolTable>();
+    //statBlockToSymbolTable(*programTable, dynamic_cast<ast::statBlock*>(node->child(2)));
     program->setLink(programTable);
     node->symbolTable()->addEntry(program);
 }
@@ -74,38 +74,6 @@ void SymbolTableCreatorVisitor::visit(ast::varDecl* node)
     std::unique_ptr<VariableType> type(new VariableType());
     nodeToVariableType(*type, node);
     node->symbolTableEntry()->setType(std::move(type));
-}
-
-void SymbolTableCreatorVisitor::visit(ast::statBlock* node)
-{
-    Visitor::visit(node);
-
-    // TODO: var decl checks go here
-
-
-
-    //auto table = node->closestSymbolTable();
-    //
-    //if (!table) {
-    //    throw std::runtime_error("SymbolTableCreatorVisitor::statBlockToSymbolTable: No symbol table exists");
-    //}
-    //
-    //statBlockToSymbolTable(*table, node);
-
-    //// create a new symbol table for this scope
-    //std::shared_ptr<SymbolTable> table = node->symbolTable() = std::make_shared<SymbolTable>();
-    //
-    //// merge entries for each child node (ie. statement)
-    //for (ast::Node* n = node->child(); n != nullptr; n = n->next()) {
-    //    if (n->symbolTableEntry()) {
-    //        // check if this symbol has been previously declared in this scope
-    //        if ((*table)[n->symbolTableEntry()->name()]) {
-    //            errors_->emplace_back(SemanticErrorType::REDECLARED_SYMBOL);
-    //        } else {
-    //            table->addEntry(n->symbolTableEntry());
-    //        }
-    //    }
-    //}
 }
 
 void SymbolTableCreatorVisitor::visit(ast::funcDecl* node)
@@ -126,22 +94,20 @@ void SymbolTableCreatorVisitor::visit(ast::classDecl* node)
     Visitor::visit(node);
 
     // populate the symbol table entry for the class
-    node->symbolTableEntry() = std::make_shared<SymbolTableEntry>();
-    node->symbolTableEntry()->setName(dynamic_cast<ast::Leaf*>(node->child(0))->token()->value);
-    node->symbolTableEntry()->setKind(SymbolTableEntryKind::CLASS);
+    auto entry = node->symbolTableEntry() = std::make_shared<SymbolTableEntry>();
+    entry->setName(dynamic_cast<ast::Leaf*>(node->child(0))->token()->value);
+    entry->setKind(SymbolTableEntryKind::CLASS);
 
     // TODO: inherList
 
     // create the class' own symbol table
-    node->symbolTableEntry()->setLink(std::make_shared<SymbolTable>());
+    auto table = node->symbolTable() = std::make_shared<SymbolTable>();
+    entry->setLink(table);
+}
 
-    // membList
-    for (ast::Node* n = node->child(2)->child(); n != nullptr; n = n->next()) {
-        if (n->symbolTableEntry()) {
-            // add this member (varDecl or funcDecl) entry to the class symbol table
-            node->symbolTableEntry()->link()->addEntry(n->symbolTableEntry());
-        }
-    }
+void SymbolTableCreatorVisitor::visit(ast::membList* node)
+{
+    Visitor::visit(node);
 }
 
 void SymbolTableCreatorVisitor::visit(ast::funcDef* node)
@@ -164,14 +130,11 @@ void SymbolTableCreatorVisitor::visit(ast::funcDef* node)
     entry->setType(std::move(type));
 
     // create the function symbol table
-    std::shared_ptr<SymbolTable> table = std::make_shared<SymbolTable>();
+    auto table = node->symbolTable() = std::make_shared<SymbolTable>();
+    entry->setLink(table);
 
     // add the function parameters to the symbol table
     fparamListToSymbolTable(*table, dynamic_cast<ast::fparamList*>(node->child(3)));
-
-    // add the function's statBlock symbols to the table
-    statBlockToSymbolTable(*table, dynamic_cast<ast::statBlock*>(node->child(4)));
-    entry->setLink(table);
 }
 
 void SymbolTableCreatorVisitor::statBlockToSymbolTable(SymbolTable& table, ast::statBlock* node) const
@@ -368,6 +331,19 @@ void SymbolTableCreatorVisitor::visit(ast::fparam* node)
     std::unique_ptr<VariableType> type(new VariableType());
     nodeToVariableType(*type, node);
     node->symbolTableEntry()->setType(std::move(type));
+}
+
+void SymbolTableCreatorVisitor::visit(ast::forStat* node)
+{
+    Visitor::visit(node);
+
+    auto entry = node->symbolTableEntry() = std::make_shared<SymbolTableEntry>();
+    //node->symbolTableEntry()->setName(dynamic_cast<ast::Leaf*>(node->child(1))->token()->value);
+    entry->setKind(SymbolTableEntryKind::BLOCK);
+
+    // create a symbol table for this for statement
+    auto table = node->symbolTable() = std::make_shared<SymbolTable>();
+    entry->setLink(table);
 }
 
 }}

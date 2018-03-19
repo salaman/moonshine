@@ -6,6 +6,7 @@
 #include <moonshine/semantic/SemanticError.h>
 #include <moonshine/semantic/TypeCheckVisitor.h>
 #include <moonshine/semantic/SymbolTableCreatorVisitor.h>
+#include <moonshine/semantic/StatementBlockDeclVisitor.h>
 
 #include <iostream>
 #include <algorithm>
@@ -59,6 +60,7 @@ int main(int argc, const char** argv)
 
         std::vector<std::unique_ptr<semantic::Visitor>> visitors;
         visitors.emplace_back(new semantic::SymbolTableCreatorVisitor());
+        visitors.emplace_back(new semantic::StatementBlockDeclVisitor());
         visitors.emplace_back(new semantic::TypeCheckVisitor());
 
         for (auto& v : visitors) {

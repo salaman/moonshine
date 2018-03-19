@@ -15,7 +15,8 @@ enum class SymbolTableEntryKind
     FUNCTION,
     CLASS,
     VARIABLE,
-    PARAMETER
+    PARAMETER,
+    BLOCK
 };
 
 class SymbolTable;
@@ -37,6 +38,7 @@ public:
     void setKind(const SymbolTableEntryKind& kind);
     void setType(type_type type);
     void setLink(const std::shared_ptr<SymbolTable>& link);
+    void setParent(SymbolTable* parent);
 private:
     key_type name_;
     SymbolTableEntryKind kind_;
@@ -76,6 +78,7 @@ public:
 
     void print(std::ostream& s) const;
 private:
+    // TODO: unordered_multimap?
     std::unordered_map<SymbolTableEntry::key_type, std::shared_ptr<SymbolTableEntry>> entries_;
     SymbolTableEntry* parent_ = nullptr;
 };
