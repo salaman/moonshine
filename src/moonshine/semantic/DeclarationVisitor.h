@@ -6,7 +6,7 @@
 
 namespace moonshine { namespace semantic {
 
-class StatementBlockDeclVisitor : public Visitor
+class DeclarationVisitor : public Visitor
 {
 public:
     inline VisitorOrder order() override

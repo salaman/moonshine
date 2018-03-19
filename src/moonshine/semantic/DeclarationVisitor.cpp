@@ -1,4 +1,4 @@
-#include "moonshine/semantic/StatementBlockDeclVisitor.h"
+#include "moonshine/semantic/DeclarationVisitor.h"
 
 #include "moonshine/lexer/TokenType.h"
 #include "moonshine/semantic/Type.h"
@@ -9,14 +9,14 @@
 
 namespace moonshine { namespace semantic {
 
-void StatementBlockDeclVisitor::visit(ast::varDecl* node)
+void DeclarationVisitor::visit(ast::varDecl* node)
 {
     Visitor::visit(node);
 
     auto table = node->closestSymbolTable();
 
     if (!table) {
-        throw std::runtime_error("StatementBlockDeclVisitor::visit(statBlock): No symbol table exists");
+        throw std::runtime_error("DeclarationVisitor::visit(statBlock): No symbol table exists");
     }
 
     if (node->symbolTableEntry()) {
@@ -29,14 +29,14 @@ void StatementBlockDeclVisitor::visit(ast::varDecl* node)
     }
 }
 
-void StatementBlockDeclVisitor::visit(ast::forStat* node)
+void DeclarationVisitor::visit(ast::forStat* node)
 {
     Visitor::visit(node);
 
     auto table = node->closestSymbolTable();
 
     if (!table) {
-        throw std::runtime_error("StatementBlockDeclVisitor::visit(statBlock): No symbol table exists");
+        throw std::runtime_error("DeclarationVisitor::visit(statBlock): No symbol table exists");
     }
 
     // link up
@@ -60,16 +60,16 @@ void StatementBlockDeclVisitor::visit(ast::forStat* node)
     }
 }
 
-void StatementBlockDeclVisitor::nodeToVariableType(VariableType& type, const ast::Node* node) const
+void DeclarationVisitor::nodeToVariableType(VariableType& type, const ast::Node* node) const
 {
     if (node == nullptr) {
-        throw std::invalid_argument("StatementBlockDeclVisitor::nodeToVar: node cannot be nullptr");
+        throw std::invalid_argument("DeclarationVisitor::nodeToVar: node cannot be nullptr");
     }
 
     auto typeNode = dynamic_cast<const ast::Leaf*>(node->child(0));
 
     if (typeNode == nullptr) {
-        throw std::runtime_error("StatementBlockDeclVisitor::nodeToVar: First child is not a leaf node");
+        throw std::runtime_error("DeclarationVisitor::nodeToVar: First child is not a leaf node");
     }
 
     // type (node is either type or id)
@@ -85,7 +85,7 @@ void StatementBlockDeclVisitor::nodeToVariableType(VariableType& type, const ast
             type.className = typeNode->token()->value;
             break;
         default:
-            throw std::runtime_error("StatementBlockDeclVisitor::nodeToVar: Invalid AST type node");
+            throw std::runtime_error("DeclarationVisitor::nodeToVar: Invalid AST type node");
     }
 
     // dimList
@@ -94,14 +94,14 @@ void StatementBlockDeclVisitor::nodeToVariableType(VariableType& type, const ast
     }
 }
 
-void StatementBlockDeclVisitor::visit(ast::funcDecl* node)
+void DeclarationVisitor::visit(ast::funcDecl* node)
 {
     Visitor::visit(node);
 
     auto table = node->closestSymbolTable();
 
     if (!table) {
-        throw std::runtime_error("StatementBlockDeclVisitor::visit(funcDecl): No symbol table exists");
+        throw std::runtime_error("DeclarationVisitor::visit(funcDecl): No symbol table exists");
     }
 
     if (node->symbolTableEntry()) {
@@ -114,14 +114,14 @@ void StatementBlockDeclVisitor::visit(ast::funcDecl* node)
     }
 }
 
-void StatementBlockDeclVisitor::visit(ast::classDecl* node)
+void DeclarationVisitor::visit(ast::classDecl* node)
 {
     Visitor::visit(node);
 
     auto table = node->parent()->closestSymbolTable();
 
     if (!table) {
-        throw std::runtime_error("StatementBlockDeclVisitor::visit(classDecl): No symbol table exists");
+        throw std::runtime_error("DeclarationVisitor::visit(classDecl): No symbol table exists");
     }
 
     if (node->symbolTableEntry()) {
@@ -134,14 +134,14 @@ void StatementBlockDeclVisitor::visit(ast::classDecl* node)
     }
 }
 
-void StatementBlockDeclVisitor::visit(ast::funcDef* node)
+void DeclarationVisitor::visit(ast::funcDef* node)
 {
     Visitor::visit(node);
 
     auto parentTable = node->parent()->closestSymbolTable();
 
     if (!parentTable) {
-        throw std::runtime_error("StatementBlockDeclVisitor::visit(funcDef): No symbol table exists");
+        throw std::runtime_error("DeclarationVisitor::visit(funcDef): No symbol table exists");
     }
 
     auto type = dynamic_cast<FunctionType*>(node->symbolTableEntry()->type());
@@ -165,7 +165,7 @@ void StatementBlockDeclVisitor::visit(ast::funcDef* node)
     }
 }
 
-void StatementBlockDeclVisitor::visit(ast::dataMember* node)
+void DeclarationVisitor::visit(ast::dataMember* node)
 {
     Visitor::visit(node);
 
@@ -173,7 +173,7 @@ void StatementBlockDeclVisitor::visit(ast::dataMember* node)
     auto table = node->closestSymbolTable();
 
     if (!table) {
-        throw std::runtime_error("StatementBlockDeclVisitor::visit(dataMember): No symbol table exists");
+        throw std::runtime_error("DeclarationVisitor::visit(dataMember): No symbol table exists");
     }
 
     auto varNode = node->parent();
@@ -270,7 +270,7 @@ void StatementBlockDeclVisitor::visit(ast::dataMember* node)
     }
 }
 
-void StatementBlockDeclVisitor::visit(ast::fCall* node)
+void DeclarationVisitor::visit(ast::fCall* node)
 {
     Visitor::visit(node);
 
@@ -278,7 +278,7 @@ void StatementBlockDeclVisitor::visit(ast::fCall* node)
     auto table = node->closestSymbolTable();
 
     if (!table) {
-        throw std::runtime_error("StatementBlockDeclVisitor::visit(fCall): No symbol table exists");
+        throw std::runtime_error("DeclarationVisitor::visit(fCall): No symbol table exists");
     }
 
     auto varNode = node->parent();
