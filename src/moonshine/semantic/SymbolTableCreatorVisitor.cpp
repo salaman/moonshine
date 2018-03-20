@@ -16,49 +16,11 @@ void SymbolTableCreatorVisitor::visit(ast::prog* node)
     // create global symbol table
     auto table = node->symbolTable() = std::make_shared<SymbolTable>();
 
-    // create entries for class declarations
-    //for (ast::Node* n = node->child(0)->child(); n != nullptr; n = n->next()) {
-    //    if (n->symbolTableEntry()) {
-    //        // TODO: redeclaration check
-    //
-    //        node->symbolTable()->addEntry(n->symbolTableEntry());
-    //    }
-    //}
-
-    // create entries for function definitions
-    //for (ast::Node* n = node->child(1)->child(); n != nullptr; n = n->next()) {
-    //    if (n->symbolTableEntry()) {
-    //        // TODO: redeclaration check
-    //        // TODO: check parameters match
-    //
-    //        auto type = dynamic_cast<FunctionType*>(n->symbolTableEntry()->type());
-    //
-    //        if (type->scope.empty()) {
-    //            // this function definition is a free function in the global symbol table
-    //            node->symbolTable()->addEntry(n->symbolTableEntry());
-    //        } else {
-    //            // this function definition is for a class member function
-    //            auto classTable = (*table)[type->scope]->link();
-    //
-    //            // find the function entry in the class' symbol table
-    //            if (auto entry = (*classTable)[n->symbolTableEntry()->name()]) {
-    //                entry->setLink(n->symbolTableEntry()->link());
-    //            } else {
-    //                errors_->emplace_back(SemanticErrorType::UNDECLARED_FUNCTION);
-    //            }
-    //        }
-    //    }
-    //}
-
-    // TODO: check that all functions have been defined
-
     // create entry for program function, using its symbol table
     auto program = std::make_shared<SymbolTableEntry>();
     program->setName("program");
     program->setKind(SymbolTableEntryKind::FUNCTION);
-    //program->setLink(node->child(2)->symbolTable());
     auto programTable = node->child(2)->symbolTable() = std::make_shared<SymbolTable>();
-    //statBlockToSymbolTable(*programTable, dynamic_cast<ast::statBlock*>(node->child(2)));
     program->setLink(programTable);
     node->symbolTable()->addEntry(program);
 }
@@ -105,11 +67,6 @@ void SymbolTableCreatorVisitor::visit(ast::classDecl* node)
     entry->setLink(table);
 }
 
-void SymbolTableCreatorVisitor::visit(ast::membList* node)
-{
-    Visitor::visit(node);
-}
-
 void SymbolTableCreatorVisitor::visit(ast::funcDef* node)
 {
     Visitor::visit(node);
@@ -135,21 +92,6 @@ void SymbolTableCreatorVisitor::visit(ast::funcDef* node)
 
     // add the function parameters to the symbol table
     fparamListToSymbolTable(*table, dynamic_cast<ast::fparamList*>(node->child(3)));
-}
-
-void SymbolTableCreatorVisitor::statBlockToSymbolTable(SymbolTable& table, ast::statBlock* node) const
-{
-    // merge entries for each child node (ie. statement)
-    for (ast::Node* n = node->child(); n != nullptr; n = n->next()) {
-        if (n->symbolTableEntry()) {
-            // check if this symbol has been previously declared in this scope
-            if (table[n->symbolTableEntry()->name()]) {
-                errors_->emplace_back(SemanticErrorType::REDECLARED_SYMBOL);
-            } else {
-                table.addEntry(n->symbolTableEntry());
-            }
-        }
-    }
 }
 
 void SymbolTableCreatorVisitor::nodeToVariableType(VariableType& type, const ast::Node* node) const
@@ -312,7 +254,7 @@ void SymbolTableCreatorVisitor::fparamListToSymbolTable(SymbolTable& table, ast:
         if (n->symbolTableEntry()) {
             // check if this symbol has been previously declared in this scope
             if (table[n->symbolTableEntry()->name()]) {
-                errors_->emplace_back(SemanticErrorType::REDECLARED_SYMBOL);
+                errors_->emplace_back(SemanticErrorType::REDECLARED_SYMBOL, dynamic_cast<ast::id*>(n->child(1))->token());
             } else {
                 table.addEntry(n->symbolTableEntry());
             }

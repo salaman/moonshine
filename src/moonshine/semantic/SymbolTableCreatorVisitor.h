@@ -11,14 +11,12 @@ class SymbolTableCreatorVisitor : public Visitor
 public:
     void visit(ast::prog* node) override;
     void visit(ast::classDecl* node) override;
-    void visit(ast::membList* node) override;
     void visit(ast::funcDecl* node) override;
     void visit(ast::funcDef* node) override;
     void visit(ast::varDecl* node) override;
     void visit(ast::fparam* node) override;
     void visit(ast::forStat* node) override;
 private:
-    void statBlockToSymbolTable(SymbolTable& table, ast::statBlock* node) const;
     void fparamListToSymbolTable(SymbolTable& table, ast::fparamList* node) const;
     void nodeToVariableType(VariableType& type, const ast::Node* node) const;
     void funcDeclToFunctionType(FunctionType& type, const ast::Node* node) const;

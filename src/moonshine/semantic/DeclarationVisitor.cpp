@@ -22,7 +22,7 @@ void DeclarationVisitor::visit(ast::varDecl* node)
     if (node->symbolTableEntry()) {
         // check if this symbol has been previously declared in this scope
         if ((*table)[node->symbolTableEntry()->name()]) {
-            errors_->emplace_back(SemanticErrorType::REDECLARED_SYMBOL);
+            errors_->emplace_back(SemanticErrorType::REDECLARED_SYMBOL, dynamic_cast<ast::id*>(node->child(1))->token());
         } else {
             table->addEntry(node->symbolTableEntry());
         }
@@ -53,7 +53,7 @@ void DeclarationVisitor::visit(ast::forStat* node)
 
     // check if this symbol has been previously declared in this scope
     if ((*table)[varDecl->name()]) {
-        errors_->emplace_back(SemanticErrorType::REDECLARED_SYMBOL);
+        errors_->emplace_back(SemanticErrorType::REDECLARED_SYMBOL, dynamic_cast<ast::id*>(node->child(1))->token());
     } else {
         // add the variable to the forStat's symbol table
         table->addEntry(varDecl);
@@ -107,7 +107,7 @@ void DeclarationVisitor::visit(ast::funcDecl* node)
     if (node->symbolTableEntry()) {
         // check if this symbol has been previously declared in this scope
         if ((*table)[node->symbolTableEntry()->name()]) {
-            errors_->emplace_back(SemanticErrorType::REDECLARED_SYMBOL);
+            errors_->emplace_back(SemanticErrorType::REDECLARED_SYMBOL, dynamic_cast<ast::id*>(node->child(1))->token());
         } else {
             table->addEntry(node->symbolTableEntry());
         }
@@ -127,7 +127,7 @@ void DeclarationVisitor::visit(ast::classDecl* node)
     if (node->symbolTableEntry()) {
         // check if this symbol has been previously declared in this scope
         if ((*table)[node->symbolTableEntry()->name()]) {
-            errors_->emplace_back(SemanticErrorType::REDECLARED_SYMBOL);
+            errors_->emplace_back(SemanticErrorType::REDECLARED_SYMBOL, dynamic_cast<ast::id*>(node->child(0))->token());
         } else {
             table->addEntry(node->symbolTableEntry());
         }
@@ -154,7 +154,7 @@ void DeclarationVisitor::visit(ast::funcDef* node)
         if ((*parentTable)[node->symbolTableEntry()->name()]) {
             // an entry for this function already exists
             // TODO: signature
-            errors_->emplace_back(SemanticErrorType::REDEFINED_FUNCTION);
+            errors_->emplace_back(SemanticErrorType::REDEFINED_FUNCTION, dynamic_cast<ast::id*>(node->child(1))->token());
         } else {
             // this is the first definition
             parentTable->addEntry(node->symbolTableEntry());
@@ -170,7 +170,7 @@ void DeclarationVisitor::visit(ast::funcDef* node)
             if (entry->link()) {
                 // if it does, this is a redefinition
                 // TODO: signature
-                errors_->emplace_back(SemanticErrorType::REDEFINED_FUNCTION);
+                errors_->emplace_back(SemanticErrorType::REDEFINED_FUNCTION, dynamic_cast<ast::id*>(node->child(2))->token());
             } else {
                 // else, set the class's function entry's symbol table to this one
                 entry->setLink(node->symbolTable());
@@ -181,7 +181,7 @@ void DeclarationVisitor::visit(ast::funcDef* node)
             }
 
         } else {
-            errors_->emplace_back(SemanticErrorType::UNDECLARED_FUNCTION);
+            errors_->emplace_back(SemanticErrorType::UNDECLARED_FUNCTION, dynamic_cast<ast::id*>(node->child(2))->token());
         }
     }
 }
@@ -217,7 +217,7 @@ void DeclarationVisitor::visit(ast::dataMember* node)
                 if (t->indices.size() != indiceCount) {
                     // if not, this is an error
                     type->type = Type::ERROR;
-                    errors_->emplace_back(SemanticErrorType::INVALID_DIMENSION_COUNT);
+                    errors_->emplace_back(SemanticErrorType::INVALID_DIMENSION_COUNT, idNode->token());
                 } else {
                     type->type = t->type;
                     type->className = t->className;
@@ -230,7 +230,7 @@ void DeclarationVisitor::visit(ast::dataMember* node)
                 std::unique_ptr<VariableType> type(new VariableType());
                 type->type = Type::ERROR;
                 varNode->setType(std::move(type));
-                errors_->emplace_back(SemanticErrorType::INVALID_VARIABLE);
+                errors_->emplace_back(SemanticErrorType::INVALID_VARIABLE, idNode->token());
             }
 
         } else {
@@ -238,7 +238,7 @@ void DeclarationVisitor::visit(ast::dataMember* node)
             std::unique_ptr<VariableType> type(new VariableType());
             type->type = Type::ERROR;
             varNode->setType(std::move(type));
-            errors_->emplace_back(SemanticErrorType::UNDECLARED_VARIABLE);
+            errors_->emplace_back(SemanticErrorType::UNDECLARED_VARIABLE, idNode->token());
         }
 
     } else if (varNode->type()->type == Type::CLASS) {
@@ -254,7 +254,7 @@ void DeclarationVisitor::visit(ast::dataMember* node)
             std::unique_ptr<VariableType> type(new VariableType());
             type->type = Type::ERROR;
             varNode->setType(std::move(type));
-            errors_->emplace_back(SemanticErrorType::UNDECLARED_MEMBER_VARIABLE);
+            errors_->emplace_back(SemanticErrorType::UNDECLARED_MEMBER_VARIABLE, idNode->token());
         } else if (auto t = dynamic_cast<VariableType*>(member->type())) {
             // the member exists and is a variable
             // set our type to a copy of its type
@@ -265,7 +265,7 @@ void DeclarationVisitor::visit(ast::dataMember* node)
             if (t->indices.size() != indiceCount) {
                 // if not, this is an error
                 type->type = Type::ERROR;
-                errors_->emplace_back(SemanticErrorType::INVALID_DIMENSION_COUNT);
+                errors_->emplace_back(SemanticErrorType::INVALID_DIMENSION_COUNT, idNode->token());
             } else {
                 type->type = t->type;
                 type->className = t->className;
@@ -277,7 +277,7 @@ void DeclarationVisitor::visit(ast::dataMember* node)
             std::unique_ptr<VariableType> type(new VariableType());
             type->type = Type::ERROR;
             varNode->setType(std::move(type));
-            errors_->emplace_back(SemanticErrorType::INVALID_VARIABLE);
+            errors_->emplace_back(SemanticErrorType::INVALID_VARIABLE, idNode->token());
         }
 
     } else if (varNode->type()->type == Type::ERROR) {
@@ -287,7 +287,7 @@ void DeclarationVisitor::visit(ast::dataMember* node)
         std::unique_ptr<VariableType> type(new VariableType());
         type->type = Type::ERROR;
         varNode->setType(std::move(type));
-        errors_->emplace_back(SemanticErrorType::INVALID_VARIABLE);
+        errors_->emplace_back(SemanticErrorType::INVALID_VARIABLE, idNode->token());
     }
 }
 
@@ -325,7 +325,7 @@ void DeclarationVisitor::visit(ast::fCall* node)
                 std::unique_ptr<VariableType> type(new VariableType());
                 type->type = Type::ERROR;
                 varNode->setType(std::move(type));
-                errors_->emplace_back(SemanticErrorType::INVALID_FUNCTION);
+                errors_->emplace_back(SemanticErrorType::INVALID_FUNCTION, idNode->token());
             }
 
         } else {
@@ -333,7 +333,7 @@ void DeclarationVisitor::visit(ast::fCall* node)
             std::unique_ptr<VariableType> type(new VariableType());
             type->type = Type::ERROR;
             varNode->setType(std::move(type));
-            errors_->emplace_back(SemanticErrorType::UNDECLARED_FUNCTION);
+            errors_->emplace_back(SemanticErrorType::UNDECLARED_FUNCTION, idNode->token());
         }
 
     } else if (varNode->type()->type == Type::CLASS) {
@@ -349,7 +349,7 @@ void DeclarationVisitor::visit(ast::fCall* node)
             std::unique_ptr<VariableType> type(new VariableType());
             type->type = Type::ERROR;
             varNode->setType(std::move(type));
-            errors_->emplace_back(SemanticErrorType::UNDECLARED_MEMBER_FUNCTION);
+            errors_->emplace_back(SemanticErrorType::UNDECLARED_MEMBER_FUNCTION, idNode->token());
         } else if (auto t = dynamic_cast<FunctionType*>(member->type())) {
             // the member exists and is a function
             // set our type to its return type
@@ -360,7 +360,7 @@ void DeclarationVisitor::visit(ast::fCall* node)
             std::unique_ptr<VariableType> type(new VariableType());
             type->type = Type::ERROR;
             varNode->setType(std::move(type));
-            errors_->emplace_back(SemanticErrorType::INVALID_FUNCTION);
+            errors_->emplace_back(SemanticErrorType::INVALID_FUNCTION, idNode->token());
         }
 
     } else if (varNode->type()->type == Type::ERROR) {
@@ -370,7 +370,7 @@ void DeclarationVisitor::visit(ast::fCall* node)
         std::unique_ptr<VariableType> type(new VariableType());
         type->type = Type::ERROR;
         varNode->setType(std::move(type));
-        errors_->emplace_back(SemanticErrorType::INVALID_FUNCTION);
+        errors_->emplace_back(SemanticErrorType::INVALID_FUNCTION, idNode->token());
     }
 }
 

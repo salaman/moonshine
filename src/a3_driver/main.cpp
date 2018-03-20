@@ -82,51 +82,60 @@ int main(int argc, const char** argv)
 
             switch (e.type) {
                 case semantic::SemanticErrorType::UNDECLARED_VARIABLE:
-                    std::cout << "Undeclared variable" << std::endl;
+                    std::cout << "Undeclared variable";
                     break;
                 case semantic::SemanticErrorType::INCOMPATIBLE_TYPE:
-                    std::cout << "Incompatible type" << std::endl;
+                    std::cout << "Incompatible type";
                     break;
                 case semantic::SemanticErrorType::INVALID_SUBSCRIPT_TYPE:
-                    std::cout << "Invalid subscript" << std::endl;
+                    std::cout << "Invalid subscript";
                     break;
                 case semantic::SemanticErrorType::INVALID_DIMENSION_COUNT:
-                    std::cout << "Invalid dimension count" << std::endl;
+                    std::cout << "Invalid dimension count";
                     break;
                 case semantic::SemanticErrorType::REDECLARED_SYMBOL:
-                    std::cout << "Redeclared symbol" << std::endl;
+                    std::cout << "Redeclared symbol";
                     break;
                 case semantic::SemanticErrorType::UNDECLARED_FUNCTION:
-                    std::cout << "Undeclared function" << std::endl;
+                    std::cout << "Undeclared function";
                     break;
                 case semantic::SemanticErrorType::INVALID_VARIABLE:
-                    std::cout << "Invalid variable" << std::endl;
+                    std::cout << "Invalid variable";
                     break;
                 case semantic::SemanticErrorType::UNDECLARED_MEMBER_VARIABLE:
-                    std::cout << "Undeclared member variable" << std::endl;
+                    std::cout << "Undeclared member variable";
                     break;
                 case semantic::SemanticErrorType::UNDECLARED_MEMBER_FUNCTION:
-                    std::cout << "Undeclared member function" << std::endl;
+                    std::cout << "Undeclared member function";
                     break;
                 case semantic::SemanticErrorType::INVALID_FUNCTION:
-                    std::cout << "Invalid function" << std::endl;
+                    std::cout << "Invalid function";
                     break;
                 case semantic::SemanticErrorType::UNDEFINED_FUNCTION:
-                    std::cout << "Undefined function" << std::endl;
+                    std::cout << "Undefined function";
                     break;
                 case semantic::SemanticErrorType::REDEFINED_FUNCTION:
-                    std::cout << "Redefined function" << std::endl;
+                    std::cout << "Redefined function";
                     break;
                 case semantic::SemanticErrorType::INCOMPATIBLE_RETURN_TYPE:
-                    std::cout << "Incompatible return type" << std::endl;
+                    std::cout << "Incompatible return type";
                     break;
                 case semantic::SemanticErrorType::SHADOWED_VARIABLE:
-                    std::cout << "Shadowed variable" << std::endl;
+                    std::cout << "Shadowed variable";
                     break;
                 case semantic::SemanticErrorType::MISSING_RETURN:
-                    std::cout << "Missing return" << std::endl;
+                    std::cout << "Missing return";
+                    break;
+                case semantic::SemanticErrorType::INVALID_RETURN:
+                    std::cout << "Invalid return";
                     break;
             }
+
+            if (e.token) {
+                std::cout << " for " << e.token->value << " (" << TokenName[e.token->type] << ") at position " << e.token->position;
+            }
+            
+            std::cout << std::endl;
         }
 
         // print the AST tree graphviz output

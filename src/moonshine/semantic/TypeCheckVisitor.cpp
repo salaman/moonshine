@@ -16,6 +16,7 @@ void TypeCheckVisitor::visit(ast::prog* node)
     Visitor::visit(node);
 
     // check that all member functions have been defined
+    // TODO: move to funcDecl
     for (auto it = node->symbolTable()->begin(); it != node->symbolTable()->end(); ++it) {
         // find classes in global table
         if (it->second->kind() == SymbolTableEntryKind::CLASS) {
@@ -25,7 +26,7 @@ void TypeCheckVisitor::visit(ast::prog* node)
             for (auto entry = classTable->begin(); entry != classTable->end(); ++entry) {
                 // ensure the function has a symbol table link
                 if (entry->second->kind() == SymbolTableEntryKind::FUNCTION && !entry->second->link()) {
-                    errors_->emplace_back(SemanticErrorType::UNDEFINED_FUNCTION);
+                    errors_->emplace_back(SemanticErrorType::UNDEFINED_FUNCTION, nullptr); // TODO
                 }
             }
         }
@@ -41,7 +42,7 @@ void TypeCheckVisitor::visit(ast::assignStat* node)
     if (*node->child(0)->type() != *node->child(1)->type()
         && node->child(0)->type()->isNotError()
         && node->child(1)->type()->isNotError()) {
-        errors_->emplace_back(SemanticErrorType::INCOMPATIBLE_TYPE);
+        errors_->emplace_back(SemanticErrorType::INCOMPATIBLE_TYPE, node->token());
     }
 }
 
@@ -69,7 +70,7 @@ void TypeCheckVisitor::visit(ast::returnStat* node)
     // check that the return type matches the function's expected return type
     // only emit an error if the child is not already an error
     if (*node->child()->type() != type->returnType && node->child()->type()->isNotError()) {
-        errors_->emplace_back(SemanticErrorType::INCOMPATIBLE_RETURN_TYPE);
+        errors_->emplace_back(SemanticErrorType::INCOMPATIBLE_RETURN_TYPE, node->token());
     }
 }
 
@@ -85,6 +86,7 @@ void TypeCheckVisitor::visit(ast::relOp* node)
         std::unique_ptr<VariableType> type(new VariableType());
         type->type = Type::ERROR;
         node->setType(std::move(type));
+        // TODO: error
     }
 }
 
@@ -103,7 +105,7 @@ void TypeCheckVisitor::visit(ast::addOp* node)
 
         // only report an error if the types aren't errors themselves to prevent error spam
         if (node->child(0)->type()->isNotError() && node->child(1)->type()->isNotError()) {
-            errors_->emplace_back(SemanticErrorType::INCOMPATIBLE_TYPE);
+            errors_->emplace_back(SemanticErrorType::INCOMPATIBLE_TYPE, node->token());
         }
     }
 }
@@ -126,7 +128,7 @@ void TypeCheckVisitor::visit(ast::multOp* node)
 
         // only report an error if the types aren't errors themselves to prevent error spam
         if (node->child(0)->type()->isNotError() && node->child(1)->type()->isNotError()) {
-            errors_->emplace_back(SemanticErrorType::INCOMPATIBLE_TYPE);
+            errors_->emplace_back(SemanticErrorType::INCOMPATIBLE_TYPE, node->token());
         }
     }
 }
@@ -156,10 +158,10 @@ void TypeCheckVisitor::visit(ast::indexList* node)
 {
     Visitor::visit(node);
 
-    // dimList
+    // dimList: ensure all subscripts are int type
     for (auto n = node->child(); n != nullptr; n = n->next()) {
         if (n->type()->type != Type::INT) {
-            errors_->emplace_back(SemanticErrorType::INVALID_SUBSCRIPT_TYPE);
+            errors_->emplace_back(SemanticErrorType::INVALID_SUBSCRIPT_TYPE, dynamic_cast<ast::id*>(node->parent()->child(0))->token()); // TODO
         }
     }
 }
@@ -186,17 +188,20 @@ void TypeCheckVisitor::visit(ast::funcDef* node)
 {
     Visitor::visit(node);
 
-    // ensure the function has a return if it needs one
+    // ensure the function has a return if it needs one, and doesn't have a return if it can't have one
 
     auto entry = node->symbolTableEntry();
     auto type = dynamic_cast<FunctionType*>(entry->type());
+    auto idNode = dynamic_cast<ast::nul*>(node->child(2))
+                  ? dynamic_cast<ast::id*>(node->child(1))
+                  : dynamic_cast<ast::id*>(node->child(2));
 
     if (type != nullptr && type->returnType.isNotError() && !entry->hasReturn()) {
         // this function needs a return and does not have one
-        errors_->emplace_back(SemanticErrorType::MISSING_RETURN);
+        errors_->emplace_back(SemanticErrorType::MISSING_RETURN, idNode->token());
     } else if (type == nullptr && entry->hasReturn()) {
         // this function has a return but can't have one
-        errors_->emplace_back(SemanticErrorType::INVALID_RETURN);
+        errors_->emplace_back(SemanticErrorType::INVALID_RETURN, idNode->token()); // TODO: this error should probably be on the returnStat
     }
 }
 
