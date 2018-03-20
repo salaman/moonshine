@@ -24,11 +24,11 @@ funcDefList      -> EPSILON
 funcBody         -> @statBlock { funcBodyInner }
 funcBodyInner    -> @varDecl primitiveType varDeclTail @4,1 @2,1 funcBodyInner
 funcBodyInner    -> construct @2,1 funcBodyStat
-funcBodyInner    -> @var variableHead funcBodyDecl
+funcBodyInner    -> @var @type variableHead funcBodyDecl
 funcBodyInner    -> EPSILON
 funcBodyStat     -> statementList
-funcBodyDecl     -> variableCont @assignStat assignStatTail ; @3,2 @2,1 funcBodyStat
-funcBodyDecl     -> @2,-1 @varDecl varDeclTail @4,2 @2,1 funcBodyInner
+funcBodyDecl     -> @2,-1 variableCont @assignStat assignStatTail ; @3,2 @2,1 funcBodyStat
+funcBodyDecl     -> @3,-1 @1,-1 @varDecl varDeclTail @4,2 @2,1 funcBodyInner
 varDeclTail      -> variableHead @dimList arraySizeList ;
 construct        -> @forStat for ( type @id id assignStatTail ; relExpr ; assignStat ) statBlock ; @7,1
 construct        -> @ifStat if ( expr ) then statBlock else statBlock ; @4,1
@@ -39,7 +39,7 @@ statement        -> assignStat ;
 statement        -> construct
 statementList    -> statement @2,1 statementList
 statementList    -> EPSILON
-assignStat       -> @assignStat variable assignStatTail @3,1
+assignStat       -> variable @assignStat assignStatTail @3,2
 assignStatTail   -> assignOp expr
 statBlock        -> @statBlock { statementList }
 statBlock        -> @statBlock statement @2,1
