@@ -46,7 +46,7 @@ void SymbolTableEntry::setType(SymbolTableEntry::type_type type)
     type_ = std::move(type);
 }
 
-void SymbolTableEntry::setLink(const std::shared_ptr<SymbolTable>& link)
+void SymbolTableEntry::setLink(const SymbolTableEntry::table_type& link)
 {
     if (!link) {
         throw std::invalid_argument("SymbolTableEntry::setLink: link cannot be nullptr");
@@ -56,7 +56,7 @@ void SymbolTableEntry::setLink(const std::shared_ptr<SymbolTable>& link)
     link_->setParentEntry(this);
 }
 
-std::shared_ptr<SymbolTableEntry> SymbolTable::operator[](const SymbolTableEntry::key_type& name)
+SymbolTable::entry_type SymbolTable::operator[](const SymbolTableEntry::key_type& name)
 {
     auto entry = entries_.find(name);
 
@@ -74,15 +74,17 @@ std::shared_ptr<SymbolTableEntry> SymbolTable::operator[](const SymbolTableEntry
     return nullptr;
 }
 
-void SymbolTable::addEntry(const std::shared_ptr<SymbolTableEntry>& entry)
+void SymbolTable::addEntry(const SymbolTable::entry_type& entry)
 {
     entries_[entry->name()] = entry;
     entry->setParent(this);
 }
 
-void SymbolTable::print(std::ostream& s) const
+void SymbolTable::print(std::ostream& s, std::string pad) const
 {
-    std::string tableName = parent_ ? parent_->name() : "GLOBAL";
+    std::string tableName = parent_
+                            ? (parent_->kind() == SymbolTableEntryKind::BLOCK ? "block" : parent_->name())
+                            : "GLOBAL";
 
     std::string::size_type nameColLen = std::max(4ul, tableName.size()) + 1;
     std::string::size_type kindColLen = 9 + 1;
@@ -99,7 +101,7 @@ void SymbolTable::print(std::ostream& s) const
     s << std::left;
 
     // name row
-    s << "┍" << tableName;
+    s << pad << "┍" << tableName;
     for (std::string::size_type i = 0; i < nameColLen - tableName.size(); ++i) s << "━";
     s << "┯";
     for (std::string::size_type i = 0; i < kindColLen; ++i) s << "━";
@@ -108,8 +110,8 @@ void SymbolTable::print(std::ostream& s) const
     s << "┑" << std::endl;
 
     // header
-    s << "│" << std::setw(nameColLen) << "name" << "│"<< std::setw(kindColLen) << "kind" << "│" << std::setw(typeColLen) << "type" << "│" << std::endl;
-    s << "├";
+    s << pad << "│" << std::setw(nameColLen) << "name" << "│"<< std::setw(kindColLen) << "kind" << "│" << std::setw(typeColLen) << "type" << "│" << std::endl;
+    s << pad << "├";
     for (std::string::size_type i = 0; i < nameColLen; ++i) s << "─";
     s << "┼";
     for (std::string::size_type i = 0; i < kindColLen; ++i) s << "─";
@@ -119,7 +121,7 @@ void SymbolTable::print(std::ostream& s) const
 
     // entries
     for (const auto& it : entries_) {
-        s << "│";
+        s << pad << "│";
         s << std::setw(nameColLen) << it.second->name();
         s << "│";
 
@@ -153,7 +155,7 @@ void SymbolTable::print(std::ostream& s) const
     }
 
     // footer
-    s << "┕";
+    s << pad << "┕";
     for (std::string::size_type i = 0; i < nameColLen; ++i) s << "━";
     s << "┷";
     for (std::string::size_type i = 0; i < kindColLen; ++i) s << "━";
@@ -161,10 +163,12 @@ void SymbolTable::print(std::ostream& s) const
     for (std::string::size_type i = 0; i < typeColLen; ++i) s << "━";
     s << "┙" << std::endl;
 
+    pad += "│ ";
+
     // recursively print sub-tables
     for (const auto& it : entries_) {
         if (it.second->link()) {
-            it.second->link()->print(s);
+            it.second->link()->print(s, pad);
         }
     }
 }
@@ -179,7 +183,7 @@ SymbolTable::map_type::iterator SymbolTable::end()
     return entries_.end();
 }
 
-void SymbolTable::setParentEntry(SymbolTableEntry* parent)
+void SymbolTable::setParentEntry(SymbolTable::weak_entry_type parent)
 {
     parent_ = parent;
 }
@@ -189,7 +193,7 @@ SymbolTable* SymbolTableEntry::parentTable() const
     return parent_;
 }
 
-void SymbolTableEntry::setParent(SymbolTable* parent)
+void SymbolTableEntry::setParent(SymbolTableEntry::weak_table_type parent)
 {
     parent_ = parent;
 }

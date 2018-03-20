@@ -68,7 +68,7 @@ int main(int argc, const char** argv)
             astRoot->accept(v.get());
         }
 
-        astRoot->symbolTable()->print(std::cout);
+        astRoot->symbolTable()->print(std::cout, "");
 
         for (const auto& e : errors) {
             switch (e.level) {

@@ -28,8 +28,9 @@ public:
     typedef std::unique_ptr<SymbolType> type_type;
     typedef SymbolType* weak_type_type;
     typedef std::shared_ptr<SymbolTable> table_type;
+    typedef SymbolTable* weak_table_type;
 
-    SymbolTable* parentTable() const;
+    weak_table_type parentTable() const;
     key_type name() const;
     SymbolTableEntryKind kind() const;
     weak_type_type type() const;
@@ -38,7 +39,7 @@ public:
     void setName(const key_type& name);
     void setKind(const SymbolTableEntryKind& kind);
     void setType(type_type type);
-    void setLink(const std::shared_ptr<SymbolTable>& link);
+    void setLink(const table_type& link);
     void setParent(SymbolTable* parent);
     void setHasReturn(const bool& hasReturn);
 private:
@@ -46,44 +47,30 @@ private:
     SymbolTableEntryKind kind_;
     type_type type_;
     table_type link_;
-    SymbolTable* parent_ = nullptr;
+    weak_table_type parent_ = nullptr;
     bool hasReturn_ = false;
-
-    friend class CompareSymbolTableEntry;
-};
-
-struct CompareSymbolTableEntry
-{
-    bool operator()(const SymbolTableEntry& lhs, const SymbolTableEntry& rhs) const
-    {
-        return lhs.name_ < rhs.name_;
-    }
-
-    bool operator()(const std::unique_ptr<SymbolTableEntry>& lhs, const std::unique_ptr<SymbolTableEntry>& rhs) const
-    {
-        return lhs->name_ < rhs->name_;
-    }
 };
 
 class SymbolTable
 {
 public:
-    typedef std::unordered_map<SymbolTableEntry::key_type, std::shared_ptr<SymbolTableEntry>> map_type;
+    typedef std::shared_ptr<SymbolTableEntry> entry_type;
+    typedef SymbolTableEntry* weak_entry_type;
+    typedef std::unordered_map<SymbolTableEntry::key_type, entry_type> map_type;
 
-    void setParentEntry(SymbolTableEntry* parent);
-
-    SymbolTableEntry* parentEntry() const;
+    weak_entry_type parentEntry() const;
+    void setParentEntry(weak_entry_type parent);
     std::shared_ptr<SymbolTableEntry> operator[](const SymbolTableEntry::key_type& name);
-    void addEntry(const std::shared_ptr<SymbolTableEntry>& entry);
+    void addEntry(const entry_type& entry);
 
     map_type::iterator begin();
     map_type::iterator end();
 
-    void print(std::ostream& s, const int& level, std::string pad) const;
+    void print(std::ostream& s, std::string pad) const;
 private:
     // TODO: unordered_multimap?
-    std::unordered_map<SymbolTableEntry::key_type, std::shared_ptr<SymbolTableEntry>> entries_;
-    SymbolTableEntry* parent_ = nullptr;
+    map_type entries_;
+    weak_entry_type parent_ = nullptr;
 };
 
 }}
