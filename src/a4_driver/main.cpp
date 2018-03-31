@@ -9,6 +9,7 @@
 #include <moonshine/semantic/SymbolTableLinkerVisitor.h>
 #include <moonshine/semantic/ShadowedSymbolCheckerVisitor.h>
 #include <moonshine/semantic/TypeCheckerVisitor.h>
+#include <moonshine/code/MemorySizeComputerVisitor.h>
 
 #include <iostream>
 #include <algorithm>
@@ -94,6 +95,8 @@ int main(int argc, const char** argv)
         visitors.emplace_back(new semantic::InheritanceResolverVisitor());
         visitors.emplace_back(new semantic::ShadowedSymbolCheckerVisitor());
         visitors.emplace_back(new semantic::TypeCheckerVisitor());
+
+        visitors.emplace_back(new code::MemorySizeComputerVisitor());
 
         // run visitors
         for (auto& v : visitors) {

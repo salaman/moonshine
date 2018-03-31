@@ -9,9 +9,7 @@
 
 namespace moonshine {
 
-namespace semantic {
-    class Visitor;
-}
+class Visitor;
 
 namespace ast {
 
@@ -33,7 +31,7 @@ public:
     Node* next() const;
     virtual bool isLeaf() const;
 
-    virtual void accept(semantic::Visitor* visitor) = 0; // TODO: make const param
+    virtual void accept(Visitor* visitor) = 0; // TODO: make const param
     std::shared_ptr<semantic::SymbolTable>& symbolTable();
     std::shared_ptr<semantic::SymbolTable> closestSymbolTable();
     std::shared_ptr<semantic::SymbolTableEntry>& symbolTableEntry();
@@ -77,7 +75,7 @@ public:
 
     bool isLeaf() const override;
 
-    void accept(semantic::Visitor* visitor) override = 0;
+    void accept(Visitor* visitor) override = 0;
 
     void print(std::ostream* s) const override;
     void subnodeGraphviz(std::ostream& s) const override;
@@ -91,7 +89,7 @@ class NAME : public Leaf                                                     \
 public:                                                                      \
     explicit NAME(std::shared_ptr<Token>& token) : Leaf(token) {}            \
     inline const char* name() const override { return #NAME; };              \
-    void accept(semantic::Visitor* visitor) override; \
+    void accept(Visitor* visitor) override; \
 };
 
 #define AST(NAME)                                                            \
@@ -99,7 +97,7 @@ class NAME : public Node                                                     \
 {                                                                            \
 public:                                                                      \
     inline const char* name() const override { return #NAME; };              \
-    void accept(semantic::Visitor* visitor) override; \
+    void accept(Visitor* visitor) override; \
 };
 
 #include "ast_nodes.h"

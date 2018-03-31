@@ -1,6 +1,6 @@
 #pragma once
 
-#include "moonshine/semantic/Visitor.h"
+#include "moonshine/Visitor.h"
 #include "moonshine/syntax/Node.h"
 #include "moonshine/semantic/Type.h"
 

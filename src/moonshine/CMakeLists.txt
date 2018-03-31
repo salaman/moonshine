@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 11)
 
 # header files
 set(HEADER_FILES
+        Visitor.h
         lexer/nfa/State.h
         lexer/nfa/Atom.h
         lexer/dfa/DFA.h
@@ -13,10 +14,25 @@ set(HEADER_FILES
         lexer/TokenType.h
         lexer/ParseError.h
         lexer/Token.h
+        syntax/Grammar.h
+        syntax/Parser.h
+        syntax/Node.h
+        syntax/ast_nodes.h
+        syntax/ParseError.h
+        semantic/TypeCheckerVisitor.h
+        semantic/SymbolTableCreatorVisitor.h
+        semantic/SymbolTable.h
+        semantic/Type.h
+        semantic/SemanticError.h
+        semantic/SymbolTableLinkerVisitor.h
+        semantic/InheritanceResolverVisitor.h
+        semantic/ShadowedSymbolCheckerVisitor.h
+        code/MemorySizeComputerVisitor.h
         )
 
 # source files
 set(SOURCE_FILES
+        Visitor.cpp
         lexer/Lexer.cpp
         lexer/nfa/NFA.cpp
         lexer/nfa/State.cpp
@@ -25,30 +41,16 @@ set(SOURCE_FILES
         lexer/dfa/DFASimulator.cpp
         lexer/TokenType.cpp
         syntax/Grammar.cpp
-        syntax/Grammar.h
         syntax/Parser.cpp
-        syntax/Parser.h
         syntax/Node.cpp
-        syntax/Node.h
-        syntax/ast_nodes.h
-        syntax/ParseError.h
-        semantic/Visitor.cpp
-        semantic/Visitor.h
-        semantic/TypeCheckerVisitor.h
         semantic/TypeCheckerVisitor.cpp
-        semantic/SymbolTableCreatorVisitor.h
         semantic/SymbolTableCreatorVisitor.cpp
         semantic/SymbolTable.cpp
-        semantic/SymbolTable.h
         semantic/Type.cpp
-        semantic/Type.h
-        semantic/SemanticError.h
         semantic/SymbolTableLinkerVisitor.cpp
-        semantic/SymbolTableLinkerVisitor.h
         semantic/InheritanceResolverVisitor.cpp
-        semantic/InheritanceResolverVisitor.h
-        semantic/ShadowedSymbolCheckerVisitor.h
         semantic/ShadowedSymbolCheckerVisitor.cpp
+        code/MemorySizeComputerVisitor.cpp
         )
 
 # define target

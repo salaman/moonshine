@@ -1,6 +1,6 @@
 #include "Node.h"
 
-#include "moonshine/semantic/Visitor.h"
+#include "moonshine/Visitor.h"
 
 #include <vector>
 #include <stdexcept>
@@ -266,37 +266,37 @@ void Leaf::print(std::ostream* s) const
 }
 
 #define AST(NAME) \
-void NAME::accept(semantic::Visitor* visitor)                  \
-{                                                              \
-    if (visitor->order() == semantic::VisitorOrder::PREORDER)  \
-        visitor->visit(this);                                  \
-                                                               \
-    Node* xsibs = child();                                     \
-                                                               \
-    while (xsibs != nullptr) {                                 \
-        xsibs->accept(visitor);                                \
-        xsibs = xsibs->next();                                 \
-    }                                                          \
-                                                               \
-    if (visitor->order() == semantic::VisitorOrder::POSTORDER) \
-        visitor->visit(this);                                  \
+void NAME::accept(Visitor* visitor)                  \
+{                                                    \
+    if (visitor->order() == VisitorOrder::PREORDER)  \
+        visitor->visit(this);                        \
+                                                     \
+    Node* xsibs = child();                           \
+                                                     \
+    while (xsibs != nullptr) {                       \
+        xsibs->accept(visitor);                      \
+        xsibs = xsibs->next();                       \
+    }                                                \
+                                                     \
+    if (visitor->order() == VisitorOrder::POSTORDER) \
+        visitor->visit(this);                        \
 }
 
 #define AST_LEAF(NAME) \
-void NAME::accept(semantic::Visitor* visitor)                  \
-{                                                              \
-    if (visitor->order() == semantic::VisitorOrder::PREORDER)  \
-        visitor->visit(this);                                  \
-                                                               \
-    Node* xsibs = child();                                     \
-                                                               \
-    while (xsibs != nullptr) {                                 \
-        xsibs->accept(visitor);                                \
-        xsibs = xsibs->next();                                 \
-    }                                                          \
-                                                               \
-    if (visitor->order() == semantic::VisitorOrder::POSTORDER) \
-        visitor->visit(this);                                  \
+void NAME::accept(Visitor* visitor)                  \
+{                                                    \
+    if (visitor->order() == VisitorOrder::PREORDER)  \
+        visitor->visit(this);                        \
+                                                     \
+    Node* xsibs = child();                           \
+                                                     \
+    while (xsibs != nullptr) {                       \
+        xsibs->accept(visitor);                      \
+        xsibs = xsibs->next();                       \
+    }                                                \
+                                                     \
+    if (visitor->order() == VisitorOrder::POSTORDER) \
+        visitor->visit(this);                        \
 }
 
 #include "ast_nodes.h"

@@ -5,7 +5,7 @@
 
 #include <vector>
 
-namespace moonshine { namespace semantic {
+namespace moonshine {
 
 enum class VisitorOrder
 {
@@ -29,10 +29,10 @@ public:
     #undef AST
     #undef AST_LEAF
 
-    void setErrorContainer(std::vector<SemanticError>* errors);
+    void setErrorContainer(std::vector<semantic::SemanticError>* errors);
 
 protected:
-    std::vector<SemanticError>* errors_ = nullptr;
+    std::vector<semantic::SemanticError>* errors_ = nullptr;
 };
 
-}}
+}
