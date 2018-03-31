@@ -60,8 +60,6 @@ void SymbolTableCreatorVisitor::visit(ast::classDecl* node)
     entry->setName(dynamic_cast<ast::Leaf*>(node->child(0))->token()->value);
     entry->setKind(SymbolTableEntryKind::CLASS);
 
-    // TODO: inherList
-
     // create the class' own symbol table
     auto table = node->symbolTable() = std::make_shared<SymbolTable>();
     entry->setLink(table);

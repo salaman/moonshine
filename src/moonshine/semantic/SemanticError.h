@@ -24,6 +24,8 @@ enum class SemanticErrorType {
     MISSING_RETURN,
     INVALID_RETURN,
     SHADOWED_VARIABLE,
+    INCORRECT_TYPE_IN_FUNCTION_DEFINITION,
+    INCORRECT_TYPE_IN_FUNCTION_CALL,
 };
 
 enum class SemanticErrorLevel {

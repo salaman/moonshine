@@ -7,8 +7,8 @@
 #include <moonshine/semantic/InheritanceResolverVisitor.h>
 #include <moonshine/semantic/SymbolTableCreatorVisitor.h>
 #include <moonshine/semantic/SymbolTableLinkerVisitor.h>
-#include <moonshine/semantic/DeclarationCheckerVisitor.h>
-#include <moonshine/semantic/TypeCheckVisitor.h>
+#include <moonshine/semantic/ShadowedSymbolCheckerVisitor.h>
+#include <moonshine/semantic/TypeCheckerVisitor.h>
 
 #include <iostream>
 #include <algorithm>
@@ -92,8 +92,8 @@ int main(int argc, const char** argv)
         visitors.emplace_back(new semantic::SymbolTableCreatorVisitor());
         visitors.emplace_back(new semantic::SymbolTableLinkerVisitor());
         visitors.emplace_back(new semantic::InheritanceResolverVisitor());
-        visitors.emplace_back(new semantic::DeclarationCheckerVisitor());
-        visitors.emplace_back(new semantic::TypeCheckVisitor());
+        visitors.emplace_back(new semantic::ShadowedSymbolCheckerVisitor());
+        visitors.emplace_back(new semantic::TypeCheckerVisitor());
 
         // run visitors
         for (auto& v : visitors) {
@@ -163,6 +163,12 @@ int main(int argc, const char** argv)
                     break;
                 case semantic::SemanticErrorType::INVALID_RETURN:
                     errorOutput << "Invalid return";
+                    break;
+                case semantic::SemanticErrorType::INCORRECT_TYPE_IN_FUNCTION_DEFINITION:
+                    errorOutput << "Incorrect type in function definition";
+                    break;
+                case semantic::SemanticErrorType::INCORRECT_TYPE_IN_FUNCTION_CALL:
+                    errorOutput << "Incorrect type in function call";
                     break;
             }
 

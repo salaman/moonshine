@@ -34,8 +34,8 @@ set(SOURCE_FILES
         syntax/ParseError.h
         semantic/Visitor.cpp
         semantic/Visitor.h
-        semantic/TypeCheckVisitor.h
-        semantic/TypeCheckVisitor.cpp
+        semantic/TypeCheckerVisitor.h
+        semantic/TypeCheckerVisitor.cpp
         semantic/SymbolTableCreatorVisitor.h
         semantic/SymbolTableCreatorVisitor.cpp
         semantic/SymbolTable.cpp
@@ -47,8 +47,8 @@ set(SOURCE_FILES
         semantic/SymbolTableLinkerVisitor.h
         semantic/InheritanceResolverVisitor.cpp
         semantic/InheritanceResolverVisitor.h
-        semantic/DeclarationCheckerVisitor.h
-        semantic/DeclarationCheckerVisitor.cpp
+        semantic/ShadowedSymbolCheckerVisitor.h
+        semantic/ShadowedSymbolCheckerVisitor.cpp
         )
 
 # define target

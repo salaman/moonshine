@@ -6,19 +6,11 @@
 
 namespace moonshine { namespace semantic {
 
-class DeclarationCheckerVisitor : public Visitor
+class ShadowedSymbolCheckerVisitor : public Visitor
 {
 public:
-    inline VisitorOrder order() override
-    {
-        return VisitorOrder::PREORDER;
-    }
-
     void visit(ast::forStat* node) override;
     void visit(ast::varDecl* node) override;
-    void visit(ast::dataMember* node) override;
-    void visit(ast::fCall* node) override;
-private:
 };
 
 }}

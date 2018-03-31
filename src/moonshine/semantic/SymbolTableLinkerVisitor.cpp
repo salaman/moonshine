@@ -53,13 +53,6 @@ void SymbolTableLinkerVisitor::visit(ast::forStat* node)
     nodeToVariableType(*type, node);
     varDecl->setType(std::move(type));
 
-    // check if this symbol has been previously declared in this scope
-    // TODO: don't do this here, do it in DeclCheck
-    if ((*table)[varDecl->name()]) {
-        node->marked = true;
-        errors_->emplace_back(SemanticErrorType::SHADOWED_VARIABLE, dynamic_cast<ast::id*>(node->child(1))->token(), SemanticErrorLevel::WARN);
-    }
-
     // add the variable to the forStat's symbol table
     table->addEntry(varDecl);
 }
@@ -150,14 +143,11 @@ void SymbolTableLinkerVisitor::visit(ast::funcDef* node)
 
     auto type = dynamic_cast<FunctionType*>(node->symbolTableEntry()->type());
 
-    // TODO: check parameters match, overloading?
-
     if (type->scope.empty()) {
         // this function definition is a free function in the global symbol table
 
         if ((*parentTable)[node->symbolTableEntry()->name()]) {
             // an entry for this function already exists
-            // TODO: signature
             errors_->emplace_back(SemanticErrorType::REDEFINED_FUNCTION, dynamic_cast<ast::id*>(node->child(1))->token());
         } else {
             // this is the first definition
@@ -173,13 +163,15 @@ void SymbolTableLinkerVisitor::visit(ast::funcDef* node)
             // check if a symbol table exists for this entry already
             if (entry->link()) {
                 // if it does, this is a redefinition
-                // TODO: signature
                 errors_->emplace_back(SemanticErrorType::REDEFINED_FUNCTION, dynamic_cast<ast::id*>(node->child(2))->token());
+            } else if (*type != *entry->type()) {
+                // the function exists, but the definition differs from the declaration
+                errors_->emplace_back(SemanticErrorType::INCORRECT_TYPE_IN_FUNCTION_DEFINITION, dynamic_cast<ast::id*>(node->child(2))->token());
             } else {
                 // else, set the class's function entry's symbol table to this one
                 entry->setLink(node->symbolTable());
 
-                // and set funcDef's entry to the new one (the old one is abandoned and unused)
+                // and set funcDef's entry to the new one (the old one is abandoned)
                 // this is so future visitors can properly refer to this node's entry
                 node->symbolTableEntry() = entry;
             }

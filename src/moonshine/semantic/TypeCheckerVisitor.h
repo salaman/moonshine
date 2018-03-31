@@ -10,7 +10,7 @@
 
 namespace moonshine { namespace semantic {
 
-class TypeCheckVisitor : public Visitor
+class TypeCheckerVisitor : public Visitor
 {
 public:
     void visit(ast::prog* node) override;
@@ -24,6 +24,10 @@ public:
     void visit(ast::returnStat* node) override;
     void visit(ast::indexList* node) override;
     void visit(ast::funcDef* node) override;
+    void visit(ast::dataMember* node) override;
+    void visit(ast::fCall* node) override;
+private:
+    void aParamsToVariableTypes(std::vector<VariableType>& types, const ast::aParams* node) const;
 };
 
 }}
