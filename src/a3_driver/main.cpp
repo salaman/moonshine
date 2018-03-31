@@ -170,6 +170,18 @@ int main(int argc, const char** argv)
                 case semantic::SemanticErrorType::INCORRECT_TYPE_IN_FUNCTION_CALL:
                     errorOutput << "Incorrect type in function call";
                     break;
+                case semantic::SemanticErrorType::DUPLICATE_SUPER:
+                    errorOutput << "Duplicate super";
+                    break;
+                case semantic::SemanticErrorType::UNDECLARED_CLASS:
+                    errorOutput << "Undeclared class";
+                    break;
+                case semantic::SemanticErrorType::INVALID_CLASS:
+                    errorOutput << "Invalid class";
+                    break;
+                case semantic::SemanticErrorType::CIRCULAR_INHERITANCE:
+                    errorOutput << "Circular inheritance";
+                    break;
             }
 
             if (e.token) {

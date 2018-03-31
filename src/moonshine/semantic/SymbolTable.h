@@ -44,6 +44,7 @@ public:
     void setParent(SymbolTable* parent);
     void setHasReturn(const bool& hasReturn);
     void addSuper(const std::shared_ptr<SymbolTableEntry>& super);
+    void removeSuper(const std::string& super);
 private:
     key_type name_;
     SymbolTableEntryKind kind_;

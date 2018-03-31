@@ -6,8 +6,78 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <algorithm>
+#include <vector>
+#include <iostream>
 
 namespace moonshine { namespace semantic {
+
+void InheritanceResolverVisitor::visit(ast::classList* node)
+{
+    Visitor::visit(node);
+
+    auto table = node->closestSymbolTable();
+
+    for (auto it = table->begin(); it != table->end(); ++it) {
+        std::shared_ptr<SymbolTableEntry> classEntry = it->second;
+
+        if (classEntry->kind() != SymbolTableEntryKind::CLASS) {
+            continue;
+        }
+
+        std::vector<std::string> supers;
+        std::map<std::string, bool> leaf;
+        std::map<std::string, std::string> tree;
+        supers.emplace_back(classEntry->name());
+        //std::cout << classEntry->name() << std::endl;
+
+        for (std::vector<std::string>::size_type i = 0; i < supers.size(); ++i) {
+            auto currentSuper = supers[i];
+            //std::cout << ">> " << currentSuper << std::endl;
+            leaf[currentSuper] = true;
+
+            for (const auto& super : (*table)[currentSuper]->supers()) {
+                //std::cout << ">>>> " << super->name() << std::endl;
+                leaf[currentSuper] = false;
+
+                if (std::find(supers.begin(), supers.end(), super->name()) != supers.end()) {
+                    if (!leaf[super->name()]) {
+                        std::string root = currentSuper;
+                        while (tree[root] != classEntry->name()) {
+                            root = tree[root];
+                        }
+
+                        //std::cout << ">>>> *** CIRCULAR! " << super->name() << std::endl;
+                        //std::cout << ">>>> *** removing " << root << std::endl;
+                        classEntry->removeSuper(root);
+
+                        std::shared_ptr<Token> token;
+                        for (auto classDecl = node->child(); classDecl != nullptr; classDecl = classDecl->next()) {
+                            if (classDecl->symbolTableEntry()->name() == classEntry->name()) {
+                                for (auto id = dynamic_cast<ast::id*>(classDecl->child(1)->child()); id != nullptr; id = dynamic_cast<ast::id*>(id->next())) {
+                                    if (id->token()->value == root) {
+                                        token = id->token();
+                                        break;
+                                    }
+                                }
+
+                                if (token) {
+                                    break;
+                                }
+                            }
+                        }
+                        errors_->emplace_back(SemanticErrorType::CIRCULAR_INHERITANCE, token);
+
+                        break;
+                    }
+                } else {
+                    tree[super->name()] = currentSuper;
+                    supers.emplace_back(super->name());
+                }
+            }
+        }
+    }
+}
 
 void InheritanceResolverVisitor::visit(ast::inherList* node)
 {
@@ -23,11 +93,29 @@ void InheritanceResolverVisitor::visit(ast::inherList* node)
     for (auto n = dynamic_cast<ast::id*>(node->child()); n != nullptr; n = dynamic_cast<ast::id*>(n->next())) {
         auto entry = (*table)[n->token()->value];
 
+        // check that the class this is referring to exists
         if (!entry) {
-            errors_->emplace_back(SemanticErrorType::UNDECLARED_VARIABLE, n->token()); // TODO
+            errors_->emplace_back(SemanticErrorType::UNDECLARED_CLASS, n->token());
             continue;
         }
 
+        // check that this symbol is a class
+        if (entry->kind() != SymbolTableEntryKind::CLASS) {
+            errors_->emplace_back(SemanticErrorType::INVALID_CLASS, n->token());
+            continue;
+        }
+
+        // check that this isn't a duplicate entry in the super list
+        auto nt = std::find_if(classEntry->supers().begin(), classEntry->supers().end(), [&entry](const std::shared_ptr<SymbolTableEntry>& super) {
+            return super->name() == entry->name();
+        });
+
+        if (nt != classEntry->supers().end()) {
+            errors_->emplace_back(SemanticErrorType::DUPLICATE_SUPER, n->token());
+            continue;
+        }
+
+        // OK!
         classEntry->addSuper(entry);
     }
 }

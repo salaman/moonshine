@@ -276,4 +276,15 @@ const std::vector<std::shared_ptr<SymbolTableEntry>>& SymbolTableEntry::supers()
     return supers_;
 }
 
+void SymbolTableEntry::removeSuper(const std::string& super)
+{
+    auto it = std::find_if(supers_.begin(), supers_.end(), [&super](const std::shared_ptr<SymbolTableEntry>& entry) {
+        return entry->name() == super;
+    });
+
+    if (it != supers_.end()) {
+        supers_.erase(it);
+    }
+}
+
 }}
