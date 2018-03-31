@@ -3,6 +3,7 @@
 #include <exception>
 #include <algorithm>
 #include <iomanip>
+#include <sstream>
 
 namespace moonshine { namespace semantic {
 
@@ -65,6 +66,16 @@ SymbolTable::entry_type SymbolTable::operator[](const SymbolTableEntry::key_type
         return entry->second;
     }
 
+    if (parent_ && parent_->kind() == SymbolTableEntryKind::CLASS) {
+        for (const auto& super : parent_->supers()) {
+            if (super->link()) {
+                if (auto a = (*super->link())[name]) {
+                    return a;
+                }
+            }
+        }
+    }
+
     // check if the parent table has the entry we want
     if (parent_ && parent_->parentTable()) {
         return (*parent_->parentTable())[name];
@@ -89,6 +100,7 @@ void SymbolTable::print(std::ostream& s, std::string pad) const
     std::string::size_type nameColLen = std::max(4ul, tableName.size()) + 1;
     std::string::size_type kindColLen = 9 + 1;
     std::string::size_type typeColLen = 4 + 1;
+    std::string::size_type superColLen = 5 + 1;
 
     for (const auto& it : entries_) {
         nameColLen = std::max(nameColLen, it.second->name().size() + 1);
@@ -96,6 +108,17 @@ void SymbolTable::print(std::ostream& s, std::string pad) const
         if (it.second->type()) {
             typeColLen = std::max(typeColLen, it.second->type()->str().size() + 1);
         }
+    }
+
+    for (const auto& it : entries_) {
+        std::string::size_type len = 0;
+        for (auto sit = it.second->supers().begin(); sit != it.second->supers().end(); ++sit) {
+            len += (*sit)->name().size();
+            if (sit + 1 != it.second->supers().end()) {
+                len += 2;
+            }
+        }
+        superColLen = std::max(superColLen, len + 1);
     }
 
     s << std::left;
@@ -107,16 +130,20 @@ void SymbolTable::print(std::ostream& s, std::string pad) const
     for (std::string::size_type i = 0; i < kindColLen; ++i) s << "━";
     s << "┯";
     for (std::string::size_type i = 0; i < typeColLen; ++i) s << "━";
+    s << "┯";
+    for (std::string::size_type i = 0; i < superColLen; ++i) s << "━";
     s << "┑" << std::endl;
 
     // header
-    s << pad << "│" << std::setw(nameColLen) << "name" << "│"<< std::setw(kindColLen) << "kind" << "│" << std::setw(typeColLen) << "type" << "│" << std::endl;
+    s << pad << "│" << std::setw(nameColLen) << "name" << "│"<< std::setw(kindColLen) << "kind" << "│" << std::setw(typeColLen) << "type" << "│" << std::setw(superColLen) << "super" << "│" << std::endl;
     s << pad << "├";
     for (std::string::size_type i = 0; i < nameColLen; ++i) s << "─";
     s << "┼";
     for (std::string::size_type i = 0; i < kindColLen; ++i) s << "─";
     s << "┼";
     for (std::string::size_type i = 0; i < typeColLen; ++i) s << "─";
+    s << "┼";
+    for (std::string::size_type i = 0; i < superColLen; ++i) s << "─";
     s << "┤" << std::endl;
 
     // entries
@@ -151,6 +178,22 @@ void SymbolTable::print(std::ostream& s, std::string pad) const
         } else {
             s << "";
         }
+        s << "│";
+
+        s << std::setw(superColLen);
+        if (it.second->supers().empty()) {
+            s << " ";
+        } else {
+            std::ostringstream oss;
+            for (auto sit = it.second->supers().begin(); sit != it.second->supers().end(); ++sit) {
+                oss << (*sit)->name();
+                if (sit + 1 != it.second->supers().end()) {
+                    oss << ", ";
+                }
+            }
+            s << oss.str();
+        }
+
         s << "│" << std::endl;
     }
 
@@ -161,6 +204,8 @@ void SymbolTable::print(std::ostream& s, std::string pad) const
     for (std::string::size_type i = 0; i < kindColLen; ++i) s << "━";
     s << "┷";
     for (std::string::size_type i = 0; i < typeColLen; ++i) s << "━";
+    s << "┷";
+    for (std::string::size_type i = 0; i < superColLen; ++i) s << "━";
     s << "┙" << std::endl;
 
     pad += "│ ";
@@ -188,6 +233,19 @@ void SymbolTable::setParentEntry(SymbolTable::weak_entry_type parent)
     parent_ = parent;
 }
 
+std::shared_ptr<SymbolTableEntry> SymbolTable::get(const SymbolTableEntry::key_type& name)
+{
+    auto entry = entries_.find(name);
+
+    // we found the entry in this table
+    if (entry != entries_.end()) {
+        return entry->second;
+    }
+
+    // else, return nullptr (don't look up in the hierarchy)
+    return nullptr;
+}
+
 SymbolTable* SymbolTableEntry::parentTable() const
 {
     return parent_;
@@ -206,6 +264,16 @@ bool SymbolTableEntry::hasReturn() const
 void SymbolTableEntry::setHasReturn(const bool& hasReturn)
 {
     hasReturn_ = hasReturn;
+}
+
+void SymbolTableEntry::addSuper(const std::shared_ptr<SymbolTableEntry>& super)
+{
+    supers_.push_back(super);
+}
+
+const std::vector<std::shared_ptr<SymbolTableEntry>>& SymbolTableEntry::supers() const
+{
+    return supers_;
 }
 
 }}

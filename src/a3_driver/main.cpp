@@ -4,9 +4,11 @@
 #include <moonshine/syntax/Grammar.h>
 #include <moonshine/syntax/Parser.h>
 #include <moonshine/semantic/SemanticError.h>
-#include <moonshine/semantic/TypeCheckVisitor.h>
+#include <moonshine/semantic/InheritanceResolverVisitor.h>
 #include <moonshine/semantic/SymbolTableCreatorVisitor.h>
-#include <moonshine/semantic/DeclarationVisitor.h>
+#include <moonshine/semantic/SymbolTableLinkerVisitor.h>
+#include <moonshine/semantic/DeclarationCheckerVisitor.h>
+#include <moonshine/semantic/TypeCheckVisitor.h>
 
 #include <iostream>
 #include <algorithm>
@@ -16,39 +18,68 @@
 #include <cstring>
 #include <memory>
 #include <vector>
+#include <istream>
 
 using namespace moonshine;
 
 int main(int argc, const char** argv)
 {
+
+    /*
+     * CONFIGURATION
+     */
+
+    // input
+
+    std::ifstream inputStream("sample.txt"); // use sample file for lexing
+    //std::istringstream inputStream("program { int a; float b; };"); // use string for lexing
+    //std::istream& inputStream = std::cin; // use cin for lexing
+
+    // derivation output (A2)
+
+    //std::ofstream derivationOutput("derivation.txt", std::ios::trunc); // use file
+    //std::ofstream derivationOutput = &std::cout; // use stdout
+    std::ofstream derivationOutput; // disable output
+
+    // AST graphviz output
+
+    std::ofstream astOutput("ast.dot", std::ios::trunc); // use file
+    //std::ofstream astOutput; // disable output
+
+    // symbol table output
+
+    //std::ofstream tableOutput("table.txt", std::ios::trunc); // use file
+    std::ostream& tableOutput = std::cout; // use stdout
+    //std::ofstream tableOutput; // disable output
+
+    // semantic error output
+
+    //std::ofstream& errorOutput = tableOutput; // use file
+    //std::ostream& errorOutput = std::cout; // use stdout
+    std::ostream& errorOutput = std::cerr; // use stderr
+    //std::ofstream errorOutput; // disable output
+
+    /*
+     * DRIVER
+     */
+
     Lexer lex;
-    syntax::Grammar grammar("grammar.txt",  "table.json", "first.txt", "follow.txt");
+    syntax::Grammar grammar("grammar.txt", "table.json", "first.txt", "follow.txt");
     syntax::Parser parser(grammar);
-
-    // use string for lexing
-    std::string input = "program { int a; a = 1 + 2; };";
-    std::istringstream stream(input);
-    lex.startLexing(&stream);
-
-    // use stdin for lexing
-    //lex.startLexing(&std::cin);
-
     //parser.setAnsi(false); // set to true for color output
 
-    std::ofstream derivationOutput("derivation.txt", std::ios::trunc);
+    lex.startLexing(&inputStream);
+
     std::unique_ptr<ast::Node> astRoot;
+    astRoot = parser.parse(&lex, &derivationOutput); // disable output
 
-    //astRoot = parser.parse(&lex, &derivationOutput); // file output
-    //astRoot = parser.parse(&lex, &std::cout); // stdout output (supports colors!)
-    astRoot = parser.parse(&lex, nullptr); // disable output
-
-    // output errors
+    // output parser errors
     for (const auto& e : parser.getErrors()) {
         switch (e.type) {
             case syntax::ParseErrorType::E_UNEXPECTED_TOKEN:
-                derivationOutput << "error: unexpected token " << e.token->value << " at position " << e.token->position << std::endl;
+                errorOutput << "error: unexpected token " << e.token->value << " at position " << e.token->position << std::endl;
             case syntax::ParseErrorType::E_UNEXPECTED_EOF:
-                derivationOutput << "error: unexpected end of file reached" << std::endl;
+                errorOutput << "error: unexpected end of file reached" << std::endl;
                 break;
             default:
                 break;
@@ -57,89 +88,92 @@ int main(int argc, const char** argv)
 
     if (astRoot) {
         std::vector<semantic::SemanticError> errors;
-
         std::vector<std::unique_ptr<semantic::Visitor>> visitors;
         visitors.emplace_back(new semantic::SymbolTableCreatorVisitor());
-        visitors.emplace_back(new semantic::DeclarationVisitor());
+        visitors.emplace_back(new semantic::SymbolTableLinkerVisitor());
+        visitors.emplace_back(new semantic::InheritanceResolverVisitor());
+        visitors.emplace_back(new semantic::DeclarationCheckerVisitor());
         visitors.emplace_back(new semantic::TypeCheckVisitor());
 
+        // run visitors
         for (auto& v : visitors) {
             v->setErrorContainer(&errors);
             astRoot->accept(v.get());
         }
 
-        astRoot->symbolTable()->print(std::cout, "");
+        // print symbol tables
+        astRoot->symbolTable()->print(tableOutput, "");
 
+        // output semantic errors
         for (const auto& e : errors) {
             switch (e.level) {
                 case semantic::SemanticErrorLevel::ERROR:
-                    std::cout << "[ERROR] ";
+                    errorOutput << "[ERROR] ";
                     break;
                 case semantic::SemanticErrorLevel::WARN:
-                    std::cout << "[WARN] ";
+                    errorOutput << "[WARN] ";
                     break;
             }
 
             switch (e.type) {
                 case semantic::SemanticErrorType::UNDECLARED_VARIABLE:
-                    std::cout << "Undeclared variable";
+                    errorOutput << "Undeclared variable";
                     break;
                 case semantic::SemanticErrorType::INCOMPATIBLE_TYPE:
-                    std::cout << "Incompatible type";
+                    errorOutput << "Incompatible type";
                     break;
                 case semantic::SemanticErrorType::INVALID_SUBSCRIPT_TYPE:
-                    std::cout << "Invalid subscript";
+                    errorOutput << "Invalid subscript";
                     break;
                 case semantic::SemanticErrorType::INVALID_DIMENSION_COUNT:
-                    std::cout << "Invalid dimension count";
+                    errorOutput << "Invalid dimension count";
                     break;
                 case semantic::SemanticErrorType::REDECLARED_SYMBOL:
-                    std::cout << "Redeclared symbol";
+                    errorOutput << "Redeclared symbol";
                     break;
                 case semantic::SemanticErrorType::UNDECLARED_FUNCTION:
-                    std::cout << "Undeclared function";
+                    errorOutput << "Undeclared function";
                     break;
                 case semantic::SemanticErrorType::INVALID_VARIABLE:
-                    std::cout << "Invalid variable";
+                    errorOutput << "Invalid variable";
                     break;
                 case semantic::SemanticErrorType::UNDECLARED_MEMBER_VARIABLE:
-                    std::cout << "Undeclared member variable";
+                    errorOutput << "Undeclared member variable";
                     break;
                 case semantic::SemanticErrorType::UNDECLARED_MEMBER_FUNCTION:
-                    std::cout << "Undeclared member function";
+                    errorOutput << "Undeclared member function";
                     break;
                 case semantic::SemanticErrorType::INVALID_FUNCTION:
-                    std::cout << "Invalid function";
+                    errorOutput << "Invalid function";
                     break;
                 case semantic::SemanticErrorType::UNDEFINED_FUNCTION:
-                    std::cout << "Undefined function";
+                    errorOutput << "Undefined function";
                     break;
                 case semantic::SemanticErrorType::REDEFINED_FUNCTION:
-                    std::cout << "Redefined function";
+                    errorOutput << "Redefined function";
                     break;
                 case semantic::SemanticErrorType::INCOMPATIBLE_RETURN_TYPE:
-                    std::cout << "Incompatible return type";
+                    errorOutput << "Incompatible return type";
                     break;
                 case semantic::SemanticErrorType::SHADOWED_VARIABLE:
-                    std::cout << "Shadowed variable";
+                    errorOutput << "Shadowed variable";
                     break;
                 case semantic::SemanticErrorType::MISSING_RETURN:
-                    std::cout << "Missing return";
+                    errorOutput << "Missing return";
                     break;
                 case semantic::SemanticErrorType::INVALID_RETURN:
-                    std::cout << "Invalid return";
+                    errorOutput << "Invalid return";
                     break;
             }
 
             if (e.token) {
-                std::cout << " for " << e.token->value << " (" << TokenName[e.token->type] << ") at position " << e.token->position;
+                errorOutput << " for " << e.token->value << " (" << TokenName[e.token->type] << ") at position " << e.token->position;
             }
             
-            std::cout << std::endl;
+            errorOutput << std::endl;
         }
 
         // print the AST tree graphviz output
-        std::ofstream astOutput("ast.dot", std::ios::trunc);
         astRoot->graphviz(astOutput);
     }
 

@@ -172,7 +172,9 @@ void Node::subnodeGraphviz(std::ostream& s) const
 
         s << "\"]";
 
-        if (xsibs->isLeaf()) {
+        if (xsibs->marked) {
+            s << "[style=filled, fillcolor=red]";
+        } else if (xsibs->isLeaf()) {
             s << "[style=filled, fillcolor=skyblue]";
         }
 
@@ -241,7 +243,9 @@ void Leaf::subnodeGraphviz(std::ostream& s) const
 
         s << "\"]";
 
-        if (xsibs->isLeaf()) {
+        if (xsibs->marked) {
+            s << "[style=filled, fillcolor=red]";
+        } else if (xsibs->isLeaf()) {
             s << "[style=filled, fillcolor=skyblue]";
         }
 

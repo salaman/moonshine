@@ -43,8 +43,13 @@ set(SOURCE_FILES
         semantic/Type.cpp
         semantic/Type.h
         semantic/SemanticError.h
-        semantic/DeclarationVisitor.cpp
-        semantic/DeclarationVisitor.h)
+        semantic/SymbolTableLinkerVisitor.cpp
+        semantic/SymbolTableLinkerVisitor.h
+        semantic/InheritanceResolverVisitor.cpp
+        semantic/InheritanceResolverVisitor.h
+        semantic/DeclarationCheckerVisitor.h
+        semantic/DeclarationCheckerVisitor.cpp
+        )
 
 # define target
 include_directories(${ROOT_INCLUDE_DIR})

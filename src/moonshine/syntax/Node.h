@@ -43,6 +43,8 @@ public:
     virtual void print(std::ostream* s) const;
     void graphviz(std::ostream& s) const;
     virtual void subnodeGraphviz(std::ostream& s) const;
+
+    bool marked = false;
 protected:
     // parent_
     Node* parent_ = nullptr;

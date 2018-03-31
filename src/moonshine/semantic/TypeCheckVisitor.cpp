@@ -63,13 +63,13 @@ void TypeCheckVisitor::visit(ast::returnStat* node)
     // get the function's type
     auto type = dynamic_cast<FunctionType*>(table->parentEntry()->type());
 
-    if (!type) {
-        throw std::runtime_error("TypeCheckVisitor::visit(returnStat): Invalid function type");
-    }
+    //if (!type) {
+    //    throw std::runtime_error("TypeCheckVisitor::visit(returnStat): Invalid function type");
+    //}
 
     // check that the return type matches the function's expected return type
     // only emit an error if the child is not already an error
-    if (*node->child()->type() != type->returnType && node->child()->type()->isNotError()) {
+    if (type && *node->child()->type() != type->returnType && node->child()->type()->isNotError()) {
         errors_->emplace_back(SemanticErrorType::INCOMPATIBLE_RETURN_TYPE, node->token());
     }
 }

@@ -35,6 +35,7 @@ public:
     SymbolTableEntryKind kind() const;
     weak_type_type type() const;
     table_type link() const;
+    const std::vector<std::shared_ptr<SymbolTableEntry>>& supers() const;
     bool hasReturn() const;
     void setName(const key_type& name);
     void setKind(const SymbolTableEntryKind& kind);
@@ -42,6 +43,7 @@ public:
     void setLink(const table_type& link);
     void setParent(SymbolTable* parent);
     void setHasReturn(const bool& hasReturn);
+    void addSuper(const std::shared_ptr<SymbolTableEntry>& super);
 private:
     key_type name_;
     SymbolTableEntryKind kind_;
@@ -49,6 +51,7 @@ private:
     table_type link_;
     weak_table_type parent_ = nullptr;
     bool hasReturn_ = false;
+    std::vector<std::shared_ptr<SymbolTableEntry>> supers_;
 };
 
 class SymbolTable
@@ -61,6 +64,7 @@ public:
     weak_entry_type parentEntry() const;
     void setParentEntry(weak_entry_type parent);
     std::shared_ptr<SymbolTableEntry> operator[](const SymbolTableEntry::key_type& name);
+    std::shared_ptr<SymbolTableEntry> get(const SymbolTableEntry::key_type& name);
     void addEntry(const entry_type& entry);
 
     map_type::iterator begin();
