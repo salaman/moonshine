@@ -27,7 +27,10 @@ public:
     void visit(ast::dataMember* node) override;
     void visit(ast::fCall* node) override;
 private:
+    int currentTempVar_ = 1;
+
     void aParamsToVariableTypes(std::vector<VariableType>& types, const ast::aParams* node) const;
+    std::string nextTempVar();
 };
 
 }}

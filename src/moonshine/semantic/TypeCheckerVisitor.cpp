@@ -97,6 +97,13 @@ void TypeCheckerVisitor::visit(ast::addOp* node)
     if (*node->child(0)->type() == *node->child(1)->type()) {
         // if lhs and rhs are of the same type, set the op's type to the same one
         node->setType(std::unique_ptr<VariableType>(new VariableType(*node->child(0)->type())));
+
+        auto table = node->closestSymbolTable();
+        node->symbolTableEntry() = std::make_shared<SymbolTableEntry>();
+        node->symbolTableEntry()->setName(nextTempVar());
+        node->symbolTableEntry()->setKind(SymbolTableEntryKind::TEMPVAR);
+        node->symbolTableEntry()->setType(std::unique_ptr<VariableType>(new VariableType(*node->type())));
+        table->addEntry(node->symbolTableEntry());
     } else {
         // else, set it to error
         std::unique_ptr<VariableType> type(new VariableType());
@@ -117,6 +124,13 @@ void TypeCheckerVisitor::visit(ast::multOp* node)
     if (*node->child(0)->type() == *node->child(1)->type()) {
         // if lhs and rhs are of the same type, set the op's type to the same one
         node->setType(std::unique_ptr<VariableType>(new VariableType(*node->child(0)->type())));
+
+        auto table = node->closestSymbolTable();
+        node->symbolTableEntry() = std::make_shared<SymbolTableEntry>();
+        node->symbolTableEntry()->setName(nextTempVar());
+        node->symbolTableEntry()->setKind(SymbolTableEntryKind::TEMPVAR);
+        node->symbolTableEntry()->setType(std::unique_ptr<VariableType>(new VariableType(*node->type())));
+        table->addEntry(node->symbolTableEntry());
     } else {
         std::unique_ptr<VariableType> type(new VariableType());
         type->type = Type::ERROR;
@@ -152,6 +166,13 @@ void TypeCheckerVisitor::visit(ast::num* node)
     }
 
     node->setType(std::move(type));
+
+    auto table = node->closestSymbolTable();
+    node->symbolTableEntry() = std::make_shared<SymbolTableEntry>();
+    node->symbolTableEntry()->setName(nextTempVar());
+    node->symbolTableEntry()->setKind(SymbolTableEntryKind::LITERAL);
+    node->symbolTableEntry()->setType(std::unique_ptr<VariableType>(new VariableType(*node->type())));
+    table->addEntry(node->symbolTableEntry());
 }
 
 void TypeCheckerVisitor::visit(ast::indexList* node)
@@ -413,6 +434,11 @@ void TypeCheckerVisitor::aParamsToVariableTypes(std::vector<VariableType>& types
 
         types.emplace_back(*aParam->type());
     }
+}
+
+std::string TypeCheckerVisitor::nextTempVar()
+{
+    return "t" + std::to_string(currentTempVar_++);
 }
 
 }}

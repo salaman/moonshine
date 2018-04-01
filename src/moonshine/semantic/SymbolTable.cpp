@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <iomanip>
 #include <sstream>
+#include <string>
 
 namespace moonshine { namespace semantic {
 
@@ -101,6 +102,8 @@ void SymbolTable::print(std::ostream& s, std::string pad) const
     std::string::size_type kindColLen = 9 + 1;
     std::string::size_type typeColLen = 4 + 1;
     std::string::size_type superColLen = 5 + 1;
+    std::string::size_type sizeColLen = 4 + 1;
+    std::string::size_type offsetColLen = 6 + 1;
 
     for (const auto& it : entries_) {
         nameColLen = std::max(nameColLen, it.second->name().size() + 1);
@@ -132,10 +135,23 @@ void SymbolTable::print(std::ostream& s, std::string pad) const
     for (std::string::size_type i = 0; i < typeColLen; ++i) s << "━";
     s << "┯";
     for (std::string::size_type i = 0; i < superColLen; ++i) s << "━";
+    s << "┯";
+    std::string sizeHeader = std::to_string(size_);
+    s << sizeHeader;
+    for (std::string::size_type i = 0; i < sizeColLen - sizeHeader.size(); ++i) s << "━";
+    s << "┯";
+    for (std::string::size_type i = 0; i < offsetColLen; ++i) s << "━";
     s << "┑" << std::endl;
 
     // header
-    s << pad << "│" << std::setw(nameColLen) << "name" << "│"<< std::setw(kindColLen) << "kind" << "│" << std::setw(typeColLen) << "type" << "│" << std::setw(superColLen) << "super" << "│" << std::endl;
+    s << pad
+      << "│" << std::setw(nameColLen) << "name"
+      << "│" << std::setw(kindColLen) << "kind"
+      << "│" << std::setw(typeColLen) << "type"
+      << "│" << std::setw(superColLen) << "super"
+      << "│" << std::setw(sizeColLen) << "size"
+      << "│" << std::setw(offsetColLen) << "offset"
+      << "│" << std::endl;
     s << pad << "├";
     for (std::string::size_type i = 0; i < nameColLen; ++i) s << "─";
     s << "┼";
@@ -144,16 +160,24 @@ void SymbolTable::print(std::ostream& s, std::string pad) const
     for (std::string::size_type i = 0; i < typeColLen; ++i) s << "─";
     s << "┼";
     for (std::string::size_type i = 0; i < superColLen; ++i) s << "─";
+    s << "┼";
+    for (std::string::size_type i = 0; i < sizeColLen; ++i) s << "─";
+    s << "┼";
+    for (std::string::size_type i = 0; i < offsetColLen; ++i) s << "─";
     s << "┤" << std::endl;
 
     // entries
     for (const auto& it : entries_) {
+        std::shared_ptr<SymbolTableEntry> entry = it.second;
         s << pad << "│";
-        s << std::setw(nameColLen) << it.second->name();
+
+        // name
+        s << std::setw(nameColLen) << entry->name();
         s << "│";
 
+        // kind
         s << std::setw(kindColLen);
-        switch (it.second->kind()) {
+        switch (entry->kind()) {
             case SymbolTableEntryKind::FUNCTION:
                 s << "function";
                 break;
@@ -169,32 +193,47 @@ void SymbolTable::print(std::ostream& s, std::string pad) const
             case SymbolTableEntryKind::BLOCK:
                 s << "block";
                 break;
+            case SymbolTableEntryKind::TEMPVAR:
+                s << "tempvar";
+                break;
+            case SymbolTableEntryKind::LITERAL:
+                s << "literal";
+                break;
         }
         s << "│";
 
+        // type
         s << std::setw(typeColLen);
-        if (it.second->type()) {
-            s << it.second->type()->str();
+        if (entry->type()) {
+            s << entry->type()->str();
         } else {
             s << "";
         }
         s << "│";
 
+        // super
         s << std::setw(superColLen);
-        if (it.second->supers().empty()) {
+        if (entry->supers().empty()) {
             s << " ";
         } else {
             std::ostringstream oss;
-            for (auto sit = it.second->supers().begin(); sit != it.second->supers().end(); ++sit) {
+            for (auto sit = entry->supers().begin(); sit != entry->supers().end(); ++sit) {
                 oss << (*sit)->name();
-                if (sit + 1 != it.second->supers().end()) {
+                if (sit + 1 != entry->supers().end()) {
                     oss << ", ";
                 }
             }
             s << oss.str();
         }
+        s << "│";
 
-        s << "│" << std::endl;
+        // size
+        s << std::setw(sizeColLen) << entry->size() << "│";
+
+        // offset
+        s << std::setw(offsetColLen) << entry->offset() << "│";
+
+        s << std::endl;
     }
 
     // footer
@@ -206,6 +245,10 @@ void SymbolTable::print(std::ostream& s, std::string pad) const
     for (std::string::size_type i = 0; i < typeColLen; ++i) s << "━";
     s << "┷";
     for (std::string::size_type i = 0; i < superColLen; ++i) s << "━";
+    s << "┷";
+    for (std::string::size_type i = 0; i < sizeColLen; ++i) s << "━";
+    s << "┷";
+    for (std::string::size_type i = 0; i < offsetColLen; ++i) s << "━";
     s << "┙" << std::endl;
 
     pad += "│ ";
@@ -244,6 +287,16 @@ std::shared_ptr<SymbolTableEntry> SymbolTable::get(const SymbolTableEntry::key_t
 
     // else, return nullptr (don't look up in the hierarchy)
     return nullptr;
+}
+
+int SymbolTable::size()
+{
+    return size_;
+}
+
+void SymbolTable::setSize(const int& size)
+{
+    size_ = size;
 }
 
 SymbolTable* SymbolTableEntry::parentTable() const
@@ -285,6 +338,26 @@ void SymbolTableEntry::removeSuper(const std::string& super)
     if (it != supers_.end()) {
         supers_.erase(it);
     }
+}
+
+int SymbolTableEntry::size()
+{
+    return size_;
+}
+
+int SymbolTableEntry::offset()
+{
+    return offset_;
+}
+
+void SymbolTableEntry::setSize(const int& size)
+{
+    size_ = size;
+}
+
+void SymbolTableEntry::setOffset(const int& offset)
+{
+    offset_ = offset;
 }
 
 }}

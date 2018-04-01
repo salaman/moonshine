@@ -16,7 +16,9 @@ enum class SymbolTableEntryKind
     CLASS,
     VARIABLE,
     PARAMETER,
-    BLOCK
+    BLOCK,
+    TEMPVAR,
+    LITERAL
 };
 
 class SymbolTable;
@@ -45,6 +47,11 @@ public:
     void setHasReturn(const bool& hasReturn);
     void addSuper(const std::shared_ptr<SymbolTableEntry>& super);
     void removeSuper(const std::string& super);
+
+    int size();
+    int offset();
+    void setSize(const int& size);
+    void setOffset(const int& offset);
 private:
     key_type name_;
     SymbolTableEntryKind kind_;
@@ -53,6 +60,9 @@ private:
     weak_table_type parent_ = nullptr;
     bool hasReturn_ = false;
     std::vector<std::shared_ptr<SymbolTableEntry>> supers_;
+
+    int size_;
+    int offset_;
 };
 
 class SymbolTable
@@ -68,6 +78,9 @@ public:
     std::shared_ptr<SymbolTableEntry> get(const SymbolTableEntry::key_type& name);
     void addEntry(const entry_type& entry);
 
+    int size();
+    void setSize(const int& size);
+
     map_type::iterator begin();
     map_type::iterator end();
 
@@ -76,6 +89,8 @@ private:
     // TODO: unordered_multimap?
     map_type entries_;
     weak_entry_type parent_ = nullptr;
+
+    int size_;
 };
 
 }}
