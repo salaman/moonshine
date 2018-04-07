@@ -45,6 +45,8 @@ set(SOURCE_FILES
         semantic/SemanticError.h
         semantic/SymbolTableLinkerVisitor.cpp
         semantic/SymbolTableLinkerVisitor.h
+        semantic/SymbolTableClassDeclLinkerVisitor.cpp
+        semantic/SymbolTableClassDeclLinkerVisitor.h
         semantic/InheritanceResolverVisitor.cpp
         semantic/InheritanceResolverVisitor.h
         semantic/ShadowedSymbolCheckerVisitor.h

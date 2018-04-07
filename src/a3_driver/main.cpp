@@ -6,6 +6,7 @@
 #include <moonshine/semantic/SemanticError.h>
 #include <moonshine/semantic/InheritanceResolverVisitor.h>
 #include <moonshine/semantic/SymbolTableCreatorVisitor.h>
+#include <moonshine/semantic/SymbolTableClassDeclLinkerVisitor.h>
 #include <moonshine/semantic/SymbolTableLinkerVisitor.h>
 #include <moonshine/semantic/ShadowedSymbolCheckerVisitor.h>
 #include <moonshine/semantic/TypeCheckerVisitor.h>
@@ -90,6 +91,7 @@ int main(int argc, const char** argv)
         std::vector<semantic::SemanticError> errors;
         std::vector<std::unique_ptr<semantic::Visitor>> visitors;
         visitors.emplace_back(new semantic::SymbolTableCreatorVisitor());
+        visitors.emplace_back(new semantic::SymbolTableClassDeclLinkerVisitor());
         visitors.emplace_back(new semantic::SymbolTableLinkerVisitor());
         visitors.emplace_back(new semantic::InheritanceResolverVisitor());
         visitors.emplace_back(new semantic::ShadowedSymbolCheckerVisitor());

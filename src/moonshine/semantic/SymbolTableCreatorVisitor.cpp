@@ -87,9 +87,6 @@ void SymbolTableCreatorVisitor::visit(ast::funcDef* node)
     // create the function symbol table
     auto table = node->symbolTable() = std::make_shared<SymbolTable>();
     entry->setLink(table);
-
-    // add the function parameters to the symbol table
-    fparamListToSymbolTable(*table, dynamic_cast<ast::fparamList*>(node->child(3)));
 }
 
 void SymbolTableCreatorVisitor::nodeToVariableType(VariableType& type, const ast::Node* node) const
@@ -242,21 +239,6 @@ void SymbolTableCreatorVisitor::funcDefToFunctionType(FunctionType& type, const 
         }
 
         type.parameterTypes.emplace_back(parameterType);
-    }
-}
-
-void SymbolTableCreatorVisitor::fparamListToSymbolTable(SymbolTable& table, ast::fparamList* node) const
-{
-    // merge entries for each child fparam
-    for (ast::Node* n = node->child(); n != nullptr; n = n->next()) {
-        if (n->symbolTableEntry()) {
-            // check if this symbol has been previously declared in this scope
-            if (table[n->symbolTableEntry()->name()]) {
-                errors_->emplace_back(SemanticErrorType::REDECLARED_SYMBOL, dynamic_cast<ast::id*>(n->child(1))->token());
-            } else {
-                table.addEntry(n->symbolTableEntry());
-            }
-        }
     }
 }
 
