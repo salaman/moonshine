@@ -19,14 +19,23 @@ void SymbolTableLinkerVisitor::visit(ast::varDecl* node)
         throw std::runtime_error("SymbolTableLinkerVisitor::visit(statBlock): No symbol table exists");
     }
 
-    if (node->symbolTableEntry()) {
+    auto& entry = node->symbolTableEntry();
+
+    if (entry) {
         // check if this symbol has been previously declared in this table
         // don't go up the table hierarchy as to not handle shadowing, which is done later
-        if (table->get(node->symbolTableEntry()->name())) {
+        if (table->get(entry->name())) {
             node->marked = true;
             errors_->emplace_back(SemanticErrorType::REDECLARED_SYMBOL, dynamic_cast<ast::id*>(node->child(1))->token());
         } else {
-            table->addEntry(node->symbolTableEntry());
+            auto type = dynamic_cast<VariableType*>(entry->type());
+
+            // if the type is a class, we should check that the class exists
+            if (type->type == Type::CLASS && !(*table)[type->className]) {
+                errors_->emplace_back(SemanticErrorType::UNDECLARED_CLASS, dynamic_cast<ast::type*>(node->child(0))->token());
+            } else {
+                table->addEntry(entry);
+            }
         }
     }
 }
@@ -101,32 +110,14 @@ void SymbolTableLinkerVisitor::visit(ast::funcDecl* node)
         throw std::runtime_error("SymbolTableLinkerVisitor::visit(funcDecl): No symbol table exists");
     }
 
-    if (node->symbolTableEntry()) {
+    auto& entry = node->symbolTableEntry();
+
+    if (entry) {
         // check if this symbol has been previously declared in this scope
-        if ((*table)[node->symbolTableEntry()->name()]) {
+        if ((*table)[entry->name()]) {
             errors_->emplace_back(SemanticErrorType::REDECLARED_SYMBOL, dynamic_cast<ast::id*>(node->child(1))->token());
         } else {
-            table->addEntry(node->symbolTableEntry());
-        }
-    }
-}
-
-void SymbolTableLinkerVisitor::visit(ast::classDecl* node)
-{
-    Visitor::visit(node);
-
-    auto table = node->parent()->closestSymbolTable();
-
-    if (!table) {
-        throw std::runtime_error("SymbolTableLinkerVisitor::visit(classDecl): No symbol table exists");
-    }
-
-    if (node->symbolTableEntry()) {
-        // check if this symbol has been previously declared in this scope
-        if ((*table)[node->symbolTableEntry()->name()]) {
-            errors_->emplace_back(SemanticErrorType::REDECLARED_SYMBOL, dynamic_cast<ast::id*>(node->child(0))->token());
-        } else {
-            table->addEntry(node->symbolTableEntry());
+            table->addEntry(entry);
         }
     }
 }
@@ -180,6 +171,9 @@ void SymbolTableLinkerVisitor::visit(ast::funcDef* node)
             errors_->emplace_back(SemanticErrorType::UNDECLARED_FUNCTION, dynamic_cast<ast::id*>(node->child(2))->token());
         }
     }
+
+    // add the function parameters to the symbol table
+    fparamListToSymbolTable(*node->symbolTable(), dynamic_cast<ast::fparamList*>(node->child(3)));
 }
 
 void SymbolTableLinkerVisitor::visit(ast::returnStat* node)
@@ -198,6 +192,30 @@ void SymbolTableLinkerVisitor::visit(ast::returnStat* node)
 
     // mark return exists
     table->parentEntry()->setHasReturn(true);
+}
+
+void SymbolTableLinkerVisitor::fparamListToSymbolTable(SymbolTable& table, ast::fparamList* node) const
+{
+    // merge entries for each child fparam
+    for (ast::Node* n = node->child(); n != nullptr; n = n->next()) {
+        auto entry = n->symbolTableEntry();
+
+        if (entry) {
+            // check if this symbol has been previously declared in this scope
+            if (table[entry->name()]) {
+                errors_->emplace_back(SemanticErrorType::REDECLARED_SYMBOL, dynamic_cast<ast::id*>(n->child(1))->token());
+            } else {
+                auto type = dynamic_cast<VariableType*>(entry->type());
+
+                // if the type is a class, we should check that the class exists
+                if (type->type == Type::CLASS && !table[type->className]) {
+                    errors_->emplace_back(SemanticErrorType::UNDECLARED_CLASS, dynamic_cast<ast::type*>(n->child(0))->token());
+                } else {
+                    table.addEntry(entry);
+                }
+            }
+        }
+    }
 }
 
 }}

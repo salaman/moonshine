@@ -24,6 +24,7 @@ set(HEADER_FILES
         semantic/SymbolTable.h
         semantic/Type.h
         semantic/SemanticError.h
+        semantic/SymbolTableClassDeclLinkerVisitor.h
         semantic/SymbolTableLinkerVisitor.h
         semantic/InheritanceResolverVisitor.h
         semantic/ShadowedSymbolCheckerVisitor.h
@@ -47,6 +48,7 @@ set(SOURCE_FILES
         semantic/SymbolTableCreatorVisitor.cpp
         semantic/SymbolTable.cpp
         semantic/Type.cpp
+        semantic/SymbolTableClassDeclLinkerVisitor.cpp
         semantic/SymbolTableLinkerVisitor.cpp
         semantic/InheritanceResolverVisitor.cpp
         semantic/ShadowedSymbolCheckerVisitor.cpp

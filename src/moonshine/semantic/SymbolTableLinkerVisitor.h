@@ -17,12 +17,12 @@ public:
 
     void visit(ast::varDecl* node) override;
     void visit(ast::forStat* node) override;
-    void visit(ast::classDecl* node) override;
     void visit(ast::funcDecl* node) override;
     void visit(ast::funcDef* node) override;
     void visit(ast::returnStat* node) override;
 private:
     void nodeToVariableType(VariableType& type, const ast::Node* node) const;
+    void fparamListToSymbolTable(SymbolTable& table, ast::fparamList* node) const;
 };
 
 }}
