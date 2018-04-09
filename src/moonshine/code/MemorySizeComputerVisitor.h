@@ -16,8 +16,10 @@ public:
     void visit(ast::forStat* node) override;
     void visit(ast::addOp* node) override;
     void visit(ast::multOp* node) override;
+    void visit(ast::relOp* node) override;
     void visit(ast::num* node) override;
     void visit(ast::var* node) override;
+    void visit(ast::dataMember* node) override;
 private:
     int getPrimitiveSize(const semantic::Type& type);
 };

@@ -2,6 +2,7 @@
 
 #include "moonshine/lexer/TokenType.h"
 #include "moonshine/semantic/Type.h"
+#include "moonshine/semantic/SymbolTable.h"
 
 #include <utility>
 #include <iomanip>
@@ -68,6 +69,13 @@ void StackCodeGeneratorVisitor::visit(ast::var* node)
     Visitor::visit(node);
 
     auto table = node->closestSymbolTable();
+
+    node->symbolTableEntry() = std::make_shared<semantic::SymbolTableEntry>();
+    node->symbolTableEntry()->setName(node->child()->symbolTableEntry()->name());
+    node->symbolTableEntry()->setKind(node->child()->symbolTableEntry()->kind());
+    //node->symbolTableEntry()->setType(std::unique_ptr<SymbolType>(new SymbolType(*node->child()->symbolTableEntry()->type())));
+    node->symbolTableEntry()->setSize(node->child()->symbolTableEntry()->size());
+    node->symbolTableEntry()->setOffset(node->child()->relativeOffset);
 
     //text() << "% var: " << node->symbolTableEntry()->name() << endl;
     //
@@ -155,6 +163,12 @@ void StackCodeGeneratorVisitor::visit(ast::relOp* node)
         case TokenType::T_IS_GREATER_OR_EQUAL:
             cge(r3, r1, r2);
             break;
+        case TokenType::T_IS_EQUAL:
+            ceq(r3, r1, r2);
+            break;
+        case TokenType::T_IS_NOT_EQUAL:
+            cne(r3, r1, r2);
+            break;
         default:
             break;
     }
@@ -230,7 +244,6 @@ void StackCodeGeneratorVisitor::visit(ast::funcDef* node)
 {
     // create the tag to jump onto
     // and copy the jumping-back address value in the called function's stack frame
-    //m_moonExecCode += String.format("%-10s",p_node.getData())  + "sw -4(r14),r15\n" ;
     text(node->symbolTableEntry()->name()) << "% funcDef: " << node->symbolTableEntry()->name() << endl;
     sw(-8, SP, JL);
 
@@ -249,6 +262,16 @@ void StackCodeGeneratorVisitor::visit(ast::funcDef* node)
 void StackCodeGeneratorVisitor::visit(ast::dataMember* node)
 {
     Visitor::visit(node);
+
+    auto table = node->closestSymbolTable().get();
+    auto entry = node->symbolTableEntry();
+    int offset = entry->offset();
+    while (table && table != entry->parentTable()) {
+        table = table->parentEntry()->parentTable();
+        offset -= table->size();
+    }
+
+    node->relativeOffset = offset;
 }
 
 void StackCodeGeneratorVisitor::visit(ast::fCall* node)
@@ -267,7 +290,7 @@ void StackCodeGeneratorVisitor::visit(ast::fCall* node)
 
     // jump to the called function's code
     // here the function's name is the label
-    // a unique label generator is necessary in the general case
+    // TODO: unique names? should we use label() for function names? perhaps create in funcDef and store in entry
     jl(JL, idNode->token()->value);
 
     // upon jumping back, set the stack frame pointer back to the current function's stack frame
@@ -283,7 +306,7 @@ void StackCodeGeneratorVisitor::visit(ast::fCall* node)
 
 void StackCodeGeneratorVisitor::visit(ast::ifStat* node)
 {
-    text() << "% ifStat" << endl;
+    text() << "% ifStat: begin" << endl;
 
     auto elseLabel = label("else");
     auto endifLabel = label("endif");
@@ -302,10 +325,55 @@ void StackCodeGeneratorVisitor::visit(ast::ifStat* node)
     j(endifLabel);
 
     // else
-    text(elseLabel) << "% ifStat" << endl;
+    text(elseLabel) << "% ifStat: else" << endl;
     node->child(2)->accept(this);
 
-    text(endifLabel) << "% ifStat" << endl;
+    text(endifLabel) << "% ifStat: end" << endl;
+}
+
+void StackCodeGeneratorVisitor::visit(ast::forStat* node)
+{
+    text() << "% forStat: begin" << endl;
+
+    auto table = node->closestSymbolTable();
+    auto parentTable = node->parent()->closestSymbolTable();
+    auto forcondLabel = label("forcond");
+    auto endforLabel = label("endfor");
+
+    // move stack frame pointer into for scope
+    addi(SP, SP, -parentTable->size());
+
+    // initialization
+    node->child(2)->accept(this);
+    text() << "% forStat: " << dynamic_cast<ast::id*>(node->child(1))->token()->value << " := " <<  node->child(2)->symbolTableEntry()->name() << endl;
+    auto r1 = reg();
+    lw(r1, -node->child(2)->symbolTableEntry()->offset(), SP);
+    sw(-(*table)[dynamic_cast<ast::id*>(node->child(1))->token()->value]->offset(), SP, r1);
+    regPush(r1);
+
+    // condition
+    text(forcondLabel) << "% forStat: condition" << endl;
+    node->child(3)->accept(this);
+    r1 = reg();
+    lw(r1, -node->child(3)->symbolTableEntry()->offset(), SP);
+    bz(r1, endforLabel);
+    regPush(r1);
+
+    // body
+    text() << "% forStat: body" << endl;
+
+    // make the stack frame pointer point to the called function's stack frame
+    node->child(5)->accept(this);
+
+    // post
+    text() << "% forStat: post" << endl;
+    node->child(4)->accept(this);
+
+    j(forcondLabel);
+
+    // reset stack frame pointer
+    text(endforLabel) << "% forStat: end" << endl;
+    subi(SP, SP, -parentTable->size());
 }
 
 std::string StackCodeGeneratorVisitor::reg()
@@ -375,6 +443,11 @@ void StackCodeGeneratorVisitor::bz(const std::string& test, const std::string& j
     text() << "bz " << test << ',' << jmp << endl;
 }
 
+void StackCodeGeneratorVisitor::bnz(const std::string& test, const std::string& jmp)
+{
+    text() << "bnz " << test << ',' << jmp << endl;
+}
+
 void StackCodeGeneratorVisitor::j(const std::string& jmp)
 {
     text() << "j " << jmp << endl;
@@ -398,6 +471,17 @@ void StackCodeGeneratorVisitor::cgt(const std::string& dest, const std::string& 
 void StackCodeGeneratorVisitor::cge(const std::string& dest, const std::string& op1, const std::string& op2)
 {
     text() << "cge " << dest << ',' << op1 << ',' << op2 << endl;
+}
+
+
+void StackCodeGeneratorVisitor::ceq(const std::string& dest, const std::string& op1, const std::string& op2)
+{
+    text() << "ceq " << dest << ',' << op1 << ',' << op2 << endl;
+}
+
+void StackCodeGeneratorVisitor::cne(const std::string& dest, const std::string& op1, const std::string& op2)
+{
+    text() << "cne " << dest << ',' << op1 << ',' << op2 << endl;
 }
 
 std::ostream& StackCodeGeneratorVisitor::data()

@@ -171,7 +171,11 @@ void Node::subnodeGraphviz(std::ostream& s) const
         }
 
         if (xsibs->symbolTableEntry()) {
-            s << "\\n" << xsibs->symbolTableEntry()->name() << " : " << xsibs->symbolTableEntry()->type()->str();
+            s << "\\n" << xsibs->symbolTableEntry()->name();
+
+            if (xsibs->symbolTableEntry()->type()) {
+                s << " : " << xsibs->symbolTableEntry()->type()->str();
+            }
         }
 
         if (xsibs->type()) {
@@ -260,7 +264,11 @@ void Leaf::subnodeGraphviz(std::ostream& s) const
         }
 
         if (xsibs->symbolTableEntry()) {
-            s << "\\n" << xsibs->symbolTableEntry()->name() << " : " << xsibs->symbolTableEntry()->type()->str();
+            s << "\\n" << xsibs->symbolTableEntry()->name();
+
+            if (xsibs->symbolTableEntry()->type()) {
+                s << " : " << xsibs->symbolTableEntry()->type()->str();
+            }
         }
 
         if (xsibs->type()) {

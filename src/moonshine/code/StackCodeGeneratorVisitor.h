@@ -35,6 +35,7 @@ public:
     void visit(ast::dataMember* node) override;
     void visit(ast::fCall* node) override;
     void visit(ast::ifStat* node) override;
+    void visit(ast::forStat* node) override;
 private:
     const std::string ZR = "r0";
     const std::string RV = "r13";
@@ -72,11 +73,14 @@ private:
     void jl(const std::string& store, const std::string& jmp);
     void jr(const std::string& jmp);
     void bz(const std::string& test, const std::string& jmp);
+    void bnz(const std::string& test, const std::string& jmp);
     void j(const std::string& jmp);
     void clt(const std::string& dest, const std::string& op1, const std::string& op2);
     void cle(const std::string& dest, const std::string& op1, const std::string& op2);
     void cgt(const std::string& dest, const std::string& op1, const std::string& op2);
     void cge(const std::string& dest, const std::string& op1, const std::string& op2);
+    void ceq(const std::string& dest, const std::string& op1, const std::string& op2);
+    void cne(const std::string& dest, const std::string& op1, const std::string& op2);
 };
 
 }}

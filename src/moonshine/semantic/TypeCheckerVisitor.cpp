@@ -84,7 +84,9 @@ void TypeCheckerVisitor::visit(ast::relOp* node)
         node->symbolTableEntry() = std::make_shared<SymbolTableEntry>();
         node->symbolTableEntry()->setName(nextTempVar());
         node->symbolTableEntry()->setKind(SymbolTableEntryKind::TEMPVAR);
-        node->symbolTableEntry()->setType(std::unique_ptr<VariableType>(new VariableType()));
+        std::unique_ptr<VariableType> type(new VariableType());
+        type->type = Type::INT;
+        node->symbolTableEntry()->setType(std::move(type));
         table->addEntry(node->symbolTableEntry());
     } else {
         std::unique_ptr<VariableType> type(new VariableType());
@@ -450,7 +452,7 @@ void TypeCheckerVisitor::visit(ast::var* node)
 
     // TODO: merge this into TypeCheckerVisitor::visit(dataMember)?
 
-    node->symbolTableEntry() = node->child()->symbolTableEntry();
+
 
     //node->symbolTableEntry() = (*table)[dynamic_cast<ast::id*>(node->child(0)->child(0))->token()->value];
 }

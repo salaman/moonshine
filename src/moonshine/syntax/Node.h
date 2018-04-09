@@ -45,6 +45,7 @@ public:
     virtual void subnodeGraphviz(std::ostream& s) const;
 
     bool marked = false;
+    int relativeOffset;
 protected:
     // parent_
     Node* parent_ = nullptr;

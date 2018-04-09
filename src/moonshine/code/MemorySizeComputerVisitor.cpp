@@ -135,6 +135,15 @@ void MemorySizeComputerVisitor::visit(ast::multOp* node)
     }
 }
 
+void MemorySizeComputerVisitor::visit(ast::relOp* node)
+{
+    Visitor::visit(node);
+
+    if (node->symbolTableEntry()) {
+        node->symbolTableEntry()->setSize(getPrimitiveSize(dynamic_cast<VariableType*>(node->symbolTableEntry()->type())->type));
+    }
+}
+
 void MemorySizeComputerVisitor::visit(ast::num* node)
 {
     Visitor::visit(node);
@@ -146,9 +155,19 @@ void MemorySizeComputerVisitor::visit(ast::var* node)
 {
     Visitor::visit(node);
 
-    if (node->symbolTableEntry()) {
-        node->symbolTableEntry()->setSize(getPrimitiveSize(node->type()->type));
-    }
+    //node->symbolTableEntry() = node->child()->symbolTableEntry();
+
+    //node->symbolTableEntry() = std::make_shared<SymbolTableEntry>();
+    //node->symbolTableEntry()->setName(node->child()->symbolTableEntry()->name());
+    //node->symbolTableEntry()->setKind(node->child()->symbolTableEntry()->kind());
+    ////node->symbolTableEntry()->setType(std::unique_ptr<SymbolType>(new SymbolType(*node->child()->symbolTableEntry()->type())));
+    //node->symbolTableEntry()->setSize(getPrimitiveSize(node->type()->type));
+    //node->symbolTableEntry()->setOffset(node->child()->relativeOffset);
+    //table->addEntry(node->symbolTableEntry());
+
+    //if (node->symbolTableEntry()) {
+    //    node->symbolTableEntry()->setSize(getPrimitiveSize(node->type()->type));
+    //}
 }
 
 int MemorySizeComputerVisitor::getPrimitiveSize(const semantic::Type& type)
@@ -165,6 +184,11 @@ int MemorySizeComputerVisitor::getPrimitiveSize(const semantic::Type& type)
         default:
             throw std::runtime_error("MemorySizeComputerVisitor::getPrimitiveSize: Invalid type given");
     }
+}
+
+void MemorySizeComputerVisitor::visit(ast::dataMember* node)
+{
+    Visitor::visit(node);
 }
 
 }}
