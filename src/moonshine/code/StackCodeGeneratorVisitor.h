@@ -65,9 +65,11 @@ private:
     void add(const std::string& dest, const std::string& source, const std::string& offset);
     void addi(const std::string& dest, const std::string& source, const std::string& immediate);
     void addi(const std::string& dest, const std::string& source, const int& immediate);
-    void mul(const std::string& dest, const std::string& source, const std::string& offset);
+    void sub(const std::string& dest, const std::string& source, const std::string& offset);
     void subi(const std::string& dest, const std::string& source, const std::string& immediate);
     void subi(const std::string& dest, const std::string& source, const int& immediate);
+    void mul(const std::string& dest, const std::string& source, const std::string& offset);
+    void div(const std::string& dest, const std::string& source, const std::string& offset);
     void lw(const std::string& dest, const int& offset, const std::string& source);
     void sw(const int& offset, const std::string& dest, const std::string& source);
     void jl(const std::string& store, const std::string& jmp);

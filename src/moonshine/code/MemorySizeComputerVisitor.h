@@ -20,6 +20,7 @@ public:
     void visit(ast::num* node) override;
     void visit(ast::var* node) override;
     void visit(ast::dataMember* node) override;
+    void visit(ast::fCall* node) override;
 private:
     int getPrimitiveSize(const semantic::Type& type);
 };

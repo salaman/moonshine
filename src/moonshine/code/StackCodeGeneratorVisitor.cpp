@@ -75,7 +75,13 @@ void StackCodeGeneratorVisitor::visit(ast::var* node)
     node->symbolTableEntry()->setKind(node->child()->symbolTableEntry()->kind());
     //node->symbolTableEntry()->setType(std::unique_ptr<SymbolType>(new SymbolType(*node->child()->symbolTableEntry()->type())));
     node->symbolTableEntry()->setSize(node->child()->symbolTableEntry()->size());
-    node->symbolTableEntry()->setOffset(node->child()->relativeOffset);
+
+    // TODO
+    if (dynamic_cast<ast::dataMember*>(node->child())) {
+        node->symbolTableEntry()->setOffset(node->child()->relativeOffset);
+    } else {
+        node->symbolTableEntry()->setOffset(node->child()->symbolTableEntry()->offset());
+    }
 
     //text() << "% var: " << node->symbolTableEntry()->name() << endl;
     //
@@ -101,7 +107,19 @@ void StackCodeGeneratorVisitor::visit(ast::addOp* node)
     lw(r1, -node->child(0)->symbolTableEntry()->offset(), SP);
     lw(r2, -node->child(1)->symbolTableEntry()->offset(), SP);
 
-    add(r3, r1, r2);
+    switch (node->token()->type) {
+        case TokenType::T_PLUS:
+            add(r3, r1, r2);
+            break;
+        case TokenType::T_MINUS:
+            sub(r3, r1, r2);
+            break;
+        case TokenType::T_OR:
+            // TODO
+            break;
+        default:
+            break;
+    }
 
     sw(-node->symbolTableEntry()->offset(), SP, r3);
 
@@ -125,8 +143,20 @@ void StackCodeGeneratorVisitor::visit(ast::multOp* node)
     lw(r1, -node->child(0)->symbolTableEntry()->offset(), SP);
     lw(r2, -node->child(1)->symbolTableEntry()->offset(), SP);
 
-    // add and store
-    mul(r3, r1, r2);
+    switch (node->token()->type) {
+        case TokenType::T_MUL:
+            mul(r3, r1, r2);
+            break;
+        case TokenType::T_DIV:
+            div(r3, r1, r2);
+            break;
+        case TokenType::T_AND:
+            // TODO
+            break;
+        default:
+            break;
+    }
+
     sw(-node->symbolTableEntry()->offset(), SP, r3);
 
     regPush(r3);
@@ -403,9 +433,9 @@ void StackCodeGeneratorVisitor::addi(const std::string& dest, const std::string&
     addi(dest, source, std::to_string(immediate));
 }
 
-void StackCodeGeneratorVisitor::mul(const std::string& dest, const std::string& source, const std::string& offset)
+void StackCodeGeneratorVisitor::sub(const std::string& dest, const std::string& source, const std::string& offset)
 {
-    text() << "mul " << dest << ',' << source << ',' << offset << endl;
+    text() << "sub " << dest << ',' << source << ',' << offset << endl;
 }
 
 void StackCodeGeneratorVisitor::subi(const std::string& dest, const std::string& source, const std::string& immediate)
@@ -416,6 +446,16 @@ void StackCodeGeneratorVisitor::subi(const std::string& dest, const std::string&
 void StackCodeGeneratorVisitor::subi(const std::string& dest, const std::string& source, const int& immediate)
 {
     subi(dest, source, std::to_string(immediate));
+}
+
+void StackCodeGeneratorVisitor::mul(const std::string& dest, const std::string& source, const std::string& offset)
+{
+    text() << "mul " << dest << ',' << source << ',' << offset << endl;
+}
+
+void StackCodeGeneratorVisitor::div(const std::string& dest, const std::string& source, const std::string& offset)
+{
+    text() << "div " << dest << ',' << source << ',' << offset << endl;
 }
 
 void StackCodeGeneratorVisitor::lw(const std::string& dest, const int& offset, const std::string& source)

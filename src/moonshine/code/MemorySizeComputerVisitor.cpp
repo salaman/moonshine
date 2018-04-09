@@ -191,4 +191,13 @@ void MemorySizeComputerVisitor::visit(ast::dataMember* node)
     Visitor::visit(node);
 }
 
+void MemorySizeComputerVisitor::visit(ast::fCall* node)
+{
+    Visitor::visit(node);
+
+    if (node->symbolTableEntry()) {
+        node->symbolTableEntry()->setSize(getPrimitiveSize(node->type()->type));
+    }
+}
+
 }}
