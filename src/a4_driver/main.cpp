@@ -11,6 +11,7 @@
 #include <moonshine/semantic/ShadowedSymbolCheckerVisitor.h>
 #include <moonshine/semantic/TypeCheckerVisitor.h>
 #include <moonshine/code/MemorySizeComputerVisitor.h>
+#include <moonshine/code/StackCodeGeneratorVisitor.h>
 
 #include <iostream>
 #include <algorithm>
@@ -61,6 +62,12 @@ int main(int argc, const char** argv)
     std::ostream& errorOutput = std::cerr; // use stderr
     //std::ofstream errorOutput; // disable output
 
+    // program output
+
+    std::ofstream programOutput("/Users/Chris/Downloads/moon/program.asm", std::ios::trunc); // use file
+    //std::ostream& programOutput = std::cout;  // use stdout
+    //std::ofstream programOutput; // disable output
+
     /*
      * DRIVER
      */
@@ -99,6 +106,7 @@ int main(int argc, const char** argv)
         visitors.emplace_back(new semantic::TypeCheckerVisitor());
 
         visitors.emplace_back(new code::MemorySizeComputerVisitor());
+        visitors.emplace_back(new code::StackCodeGeneratorVisitor(programOutput, programOutput));
 
         // run visitors
         for (auto& v : visitors) {

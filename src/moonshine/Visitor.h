@@ -9,8 +9,9 @@ namespace moonshine {
 
 enum class VisitorOrder
 {
+    NONE,
     POSTORDER,
-    PREORDER
+    PREORDER,
 };
 
 class Visitor
@@ -21,8 +22,8 @@ public:
         return VisitorOrder::POSTORDER;
     }
 
-    #define AST(NAME) virtual void visit(ast::NAME* node) {}
-    #define AST_LEAF(NAME) virtual void visit(ast::NAME* node) {}
+    #define AST(NAME) virtual void visit(ast::NAME* node) { if (order() == VisitorOrder::NONE) next(node); }
+    #define AST_LEAF(NAME) virtual void visit(ast::NAME* node) { if (order() == VisitorOrder::NONE) next(node); }
 
     #include "moonshine/syntax/ast_nodes.h"
 
@@ -33,6 +34,8 @@ public:
 
 protected:
     std::vector<semantic::SemanticError>* errors_ = nullptr;
+
+    void next(ast::Node* node);
 };
 
 }

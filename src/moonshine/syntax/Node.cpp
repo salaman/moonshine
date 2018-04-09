@@ -166,6 +166,10 @@ void Node::subnodeGraphviz(std::ostream& s) const
     while (xsibs != nullptr) {
         s << "    " << reinterpret_cast<std::uintptr_t>(xsibs) << R"( [label=")" << xsibs->name();// << "\"]";
 
+        if (xsibs->symbolTableEntry()) {
+            s << "\\n" << xsibs->symbolTableEntry()->name();
+        }
+
         if (xsibs->type()) {
             s << "\\n<" << xsibs->type()->str() << '>';
         }
@@ -221,6 +225,11 @@ std::shared_ptr<semantic::SymbolTable> Node::closestSymbolTable()
     return curNode != nullptr ? curNode->symbolTable() : nullptr;
 }
 
+const std::shared_ptr<semantic::SymbolTableEntry>& Node::symbolTableEntry() const
+{
+    return symbolTableEntry_;
+}
+
 bool Leaf::isLeaf() const
 {
     return !leftmostChild_;
@@ -237,7 +246,11 @@ void Leaf::subnodeGraphviz(std::ostream& s) const
     while (xsibs != nullptr) {
         s << "    " << reinterpret_cast<std::uintptr_t>(xsibs) << R"( [label=")" << xsibs->name();// << "\"]";
 
-        if (xsibs->type() != nullptr) {
+        if (xsibs->symbolTableEntry()) {
+            s << "\\n" << xsibs->symbolTableEntry()->name();
+        }
+
+        if (xsibs->type()) {
             s << "\\n<" << xsibs->type()->str() << '>';
         }
 
@@ -266,37 +279,45 @@ void Leaf::print(std::ostream* s) const
 }
 
 #define AST(NAME) \
-void NAME::accept(Visitor* visitor)                  \
-{                                                    \
-    if (visitor->order() == VisitorOrder::PREORDER)  \
-        visitor->visit(this);                        \
-                                                     \
-    Node* xsibs = child();                           \
-                                                     \
-    while (xsibs != nullptr) {                       \
-        xsibs->accept(visitor);                      \
-        xsibs = xsibs->next();                       \
-    }                                                \
-                                                     \
-    if (visitor->order() == VisitorOrder::POSTORDER) \
-        visitor->visit(this);                        \
+void NAME::accept(Visitor* visitor)                      \
+{                                                        \
+    if (visitor->order() == VisitorOrder::NONE)          \
+        visitor->visit(this);                            \
+    else {                                               \
+        if (visitor->order() == VisitorOrder::PREORDER)  \
+            visitor->visit(this);                        \
+                                                         \
+        Node* xsibs = child();                           \
+                                                         \
+        while (xsibs != nullptr) {                       \
+            xsibs->accept(visitor);                      \
+            xsibs = xsibs->next();                       \
+        }                                                \
+                                                         \
+        if (visitor->order() == VisitorOrder::POSTORDER) \
+            visitor->visit(this);                        \
+    }                                                    \
 }
 
 #define AST_LEAF(NAME) \
-void NAME::accept(Visitor* visitor)                  \
-{                                                    \
-    if (visitor->order() == VisitorOrder::PREORDER)  \
-        visitor->visit(this);                        \
-                                                     \
-    Node* xsibs = child();                           \
-                                                     \
-    while (xsibs != nullptr) {                       \
-        xsibs->accept(visitor);                      \
-        xsibs = xsibs->next();                       \
-    }                                                \
-                                                     \
-    if (visitor->order() == VisitorOrder::POSTORDER) \
-        visitor->visit(this);                        \
+void NAME::accept(Visitor* visitor)                      \
+{                                                        \
+    if (visitor->order() == VisitorOrder::NONE)          \
+        visitor->visit(this);                            \
+    else {                                               \
+        if (visitor->order() == VisitorOrder::PREORDER)  \
+            visitor->visit(this);                        \
+                                                         \
+        Node* xsibs = child();                           \
+                                                         \
+        while (xsibs != nullptr) {                       \
+            xsibs->accept(visitor);                      \
+            xsibs = xsibs->next();                       \
+        }                                                \
+                                                         \
+        if (visitor->order() == VisitorOrder::POSTORDER) \
+            visitor->visit(this);                        \
+    }                                                    \
 }
 
 #include "ast_nodes.h"

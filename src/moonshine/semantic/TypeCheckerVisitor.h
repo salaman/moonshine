@@ -26,6 +26,7 @@ public:
     void visit(ast::funcDef* node) override;
     void visit(ast::dataMember* node) override;
     void visit(ast::fCall* node) override;
+    void visit(ast::var* node) override;
 private:
     int currentTempVar_ = 1;
 

@@ -136,6 +136,15 @@ void MemorySizeComputerVisitor::visit(ast::num* node)
     node->symbolTableEntry()->setSize(getPrimitiveSize(node->type()->type));
 }
 
+void MemorySizeComputerVisitor::visit(ast::var* node)
+{
+    Visitor::visit(node);
+
+    if (node->symbolTableEntry()) {
+        node->symbolTableEntry()->setSize(getPrimitiveSize(node->type()->type));
+    }
+}
+
 int MemorySizeComputerVisitor::getPrimitiveSize(const semantic::Type& type)
 {
     switch (type) {

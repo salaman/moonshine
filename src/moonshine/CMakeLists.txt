@@ -29,6 +29,7 @@ set(HEADER_FILES
         semantic/InheritanceResolverVisitor.h
         semantic/ShadowedSymbolCheckerVisitor.h
         code/MemorySizeComputerVisitor.h
+        code/StackCodeGeneratorVisitor.h
         )
 
 # source files
@@ -53,6 +54,7 @@ set(SOURCE_FILES
         semantic/InheritanceResolverVisitor.cpp
         semantic/ShadowedSymbolCheckerVisitor.cpp
         code/MemorySizeComputerVisitor.cpp
+        code/StackCodeGeneratorVisitor.cpp
         )
 
 # define target
