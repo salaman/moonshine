@@ -126,6 +126,46 @@ void StackCodeGeneratorVisitor::visit(ast::multOp* node)
     regPush(r1);
 }
 
+void StackCodeGeneratorVisitor::visit(ast::relOp* node)
+{
+    Visitor::visit(node);
+
+    text() << "% relOp: " << node->symbolTableEntry()->name() << " := "
+           << node->child(0)->symbolTableEntry()->name() << ' ' << node->token()->value << ' ' << node->child(1)->symbolTableEntry()->name() << endl;
+
+    auto r1 = reg();
+    auto r2 = reg();
+    auto r3 = reg();
+
+    // load data from lhs and rhs
+    lw(r1, -node->child(0)->symbolTableEntry()->offset(), SP);
+    lw(r2, -node->child(1)->symbolTableEntry()->offset(), SP);
+
+    // add and store
+    switch (node->token()->type) {
+        case TokenType::T_IS_SMALLER:
+            clt(r3, r1, r2);
+            break;
+        case TokenType::T_IS_SMALLER_OR_EQUAL:
+            cle(r3, r1, r2);
+            break;
+        case TokenType::T_IS_GREATER:
+            cgt(r3, r1, r2);
+            break;
+        case TokenType::T_IS_GREATER_OR_EQUAL:
+            cge(r3, r1, r2);
+            break;
+        default:
+            break;
+    }
+
+    sw(-node->symbolTableEntry()->offset(), SP, r3);
+
+    regPush(r3);
+    regPush(r2);
+    regPush(r1);
+}
+
 void StackCodeGeneratorVisitor::visit(ast::assignStat* node)
 {
     Visitor::visit(node);
@@ -206,7 +246,6 @@ void StackCodeGeneratorVisitor::visit(ast::funcDef* node)
     jr(JL);
 }
 
-
 void StackCodeGeneratorVisitor::visit(ast::dataMember* node)
 {
     Visitor::visit(node);
@@ -242,6 +281,33 @@ void StackCodeGeneratorVisitor::visit(ast::fCall* node)
     regPush(r1);
 }
 
+void StackCodeGeneratorVisitor::visit(ast::ifStat* node)
+{
+    text() << "% ifStat" << endl;
+
+    auto elseLabel = label("else");
+    auto endifLabel = label("endif");
+
+    // condition
+    node->child(0)->accept(this);
+
+    auto r1 = reg();
+    lw(r1, -node->child(0)->symbolTableEntry()->offset(), SP);
+    bz(r1, elseLabel);
+    regPush(r1);
+
+    // then
+    node->child(1)->accept(this);
+
+    j(endifLabel);
+
+    // else
+    text(elseLabel) << "% ifStat" << endl;
+    node->child(2)->accept(this);
+
+    text(endifLabel) << "% ifStat" << endl;
+}
+
 std::string StackCodeGeneratorVisitor::reg()
 {
     auto r = registers_.top();
@@ -256,12 +322,12 @@ void StackCodeGeneratorVisitor::regPush(const std::string& reg)
 
 void StackCodeGeneratorVisitor::add(const std::string& dest, const std::string& source, const std::string& offset)
 {
-    text() << "add " << dest << ',' << source << ',' << offset << std::endl;
+    text() << "add " << dest << ',' << source << ',' << offset << endl;
 }
 
 void StackCodeGeneratorVisitor::addi(const std::string& dest, const std::string& source, const std::string& immediate)
 {
-    text() << "addi " << dest << ',' << source << ',' << immediate << std::endl;
+    text() << "addi " << dest << ',' << source << ',' << immediate << endl;
 }
 
 void StackCodeGeneratorVisitor::addi(const std::string& dest, const std::string& source, const int& immediate)
@@ -271,12 +337,12 @@ void StackCodeGeneratorVisitor::addi(const std::string& dest, const std::string&
 
 void StackCodeGeneratorVisitor::mul(const std::string& dest, const std::string& source, const std::string& offset)
 {
-    text() << "mul " << dest << ',' << source << ',' << offset << std::endl;
+    text() << "mul " << dest << ',' << source << ',' << offset << endl;
 }
 
 void StackCodeGeneratorVisitor::subi(const std::string& dest, const std::string& source, const std::string& immediate)
 {
-    text() << "subi " << dest << ',' << source << ',' << immediate << std::endl;
+    text() << "subi " << dest << ',' << source << ',' << immediate << endl;
 }
 
 void StackCodeGeneratorVisitor::subi(const std::string& dest, const std::string& source, const int& immediate)
@@ -286,22 +352,52 @@ void StackCodeGeneratorVisitor::subi(const std::string& dest, const std::string&
 
 void StackCodeGeneratorVisitor::lw(const std::string& dest, const int& offset, const std::string& source)
 {
-    text() << "lw " << dest << ',' << offset << '(' << source << ')' << std::endl;
+    text() << "lw " << dest << ',' << offset << '(' << source << ')' << endl;
 }
 
 void StackCodeGeneratorVisitor::sw(const int& offset, const std::string& dest, const std::string& source)
 {
-    text() << "sw " << offset << '(' << dest << ")," << source << std::endl;
+    text() << "sw " << offset << '(' << dest << ")," << source << endl;
 }
 
 void StackCodeGeneratorVisitor::jl(const std::string& store, const std::string& jmp)
 {
-    text() << "jl " << store << ',' << jmp << std::endl;
+    text() << "jl " << store << ',' << jmp << endl;
 }
 
 void StackCodeGeneratorVisitor::jr(const std::string& jmp)
 {
-    text() << "jr " << jmp << std::endl;
+    text() << "jr " << jmp << endl;
+}
+
+void StackCodeGeneratorVisitor::bz(const std::string& test, const std::string& jmp)
+{
+    text() << "bz " << test << ',' << jmp << endl;
+}
+
+void StackCodeGeneratorVisitor::j(const std::string& jmp)
+{
+    text() << "j " << jmp << endl;
+}
+
+void StackCodeGeneratorVisitor::clt(const std::string& dest, const std::string& op1, const std::string& op2)
+{
+    text() << "clt " << dest << ',' << op1 << ',' << op2 << endl;
+}
+
+void StackCodeGeneratorVisitor::cle(const std::string& dest, const std::string& op1, const std::string& op2)
+{
+    text() << "cle " << dest << ',' << op1 << ',' << op2 << endl;
+}
+
+void StackCodeGeneratorVisitor::cgt(const std::string& dest, const std::string& op1, const std::string& op2)
+{
+    text() << "cgt " << dest << ',' << op1 << ',' << op2 << endl;
+}
+
+void StackCodeGeneratorVisitor::cge(const std::string& dest, const std::string& op1, const std::string& op2)
+{
+    text() << "cge " << dest << ',' << op1 << ',' << op2 << endl;
 }
 
 std::ostream& StackCodeGeneratorVisitor::data()
@@ -322,6 +418,11 @@ std::ostream& StackCodeGeneratorVisitor::text()
 std::ostream& StackCodeGeneratorVisitor::text(const std::string& label)
 {
     return textStream_ << std::left << std::setw(10) << label;
+}
+
+std::string StackCodeGeneratorVisitor::label(const std::string& label)
+{
+    return label + std::to_string(labels_[label]++);
 }
 
 }}

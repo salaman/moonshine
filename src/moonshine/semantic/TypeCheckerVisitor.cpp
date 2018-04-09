@@ -79,14 +79,22 @@ void TypeCheckerVisitor::visit(ast::relOp* node)
     Visitor::visit(node);
 
     // if lhs and rhs are not of the same type, error
-    // only report an error if the types aren't errors themselves to prevent error spam
-    if (*node->child(0)->type() != *node->child(1)->type()
-        && node->child(0)->type()->isNotError()
-        && node->child(1)->type()->isNotError()) {
+    if (*node->child(0)->type() == *node->child(1)->type()) {
+        auto table = node->closestSymbolTable();
+        node->symbolTableEntry() = std::make_shared<SymbolTableEntry>();
+        node->symbolTableEntry()->setName(nextTempVar());
+        node->symbolTableEntry()->setKind(SymbolTableEntryKind::TEMPVAR);
+        node->symbolTableEntry()->setType(std::unique_ptr<VariableType>(new VariableType()));
+        table->addEntry(node->symbolTableEntry());
+    } else {
         std::unique_ptr<VariableType> type(new VariableType());
         type->type = Type::ERROR;
         node->setType(std::move(type));
-        // TODO: error
+
+        // only report an error if the types aren't errors themselves to prevent error spam
+        if (node->child(0)->type()->isNotError() && node->child(1)->type()->isNotError()) {
+            errors_->emplace_back(SemanticErrorType::INCOMPATIBLE_TYPE, node->token());
+        }
     }
 }
 

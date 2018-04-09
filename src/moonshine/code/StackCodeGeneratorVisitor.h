@@ -7,6 +7,7 @@
 #include <sstream>
 #include <string>
 #include <stack>
+#include <map>
 
 namespace moonshine { namespace code {
 
@@ -26,12 +27,14 @@ public:
     void visit(ast::var* node) override;
     void visit(ast::addOp* node) override;
     void visit(ast::multOp* node) override;
+    void visit(ast::relOp* node) override;
     void visit(ast::assignStat* node) override;
     void visit(ast::putStat* node) override;
     void visit(ast::returnStat* node) override;
     void visit(ast::funcDef* node) override;
     void visit(ast::dataMember* node) override;
     void visit(ast::fCall* node) override;
+    void visit(ast::ifStat* node) override;
 private:
     const std::string ZR = "r0";
     const std::string RV = "r13";
@@ -45,6 +48,8 @@ private:
 
     std::stack<std::string> registers_;
 
+    std::map<std::string, int> labels_;
+
     std::string reg();
     void regPush(const std::string& reg);
 
@@ -52,6 +57,8 @@ private:
     std::ostream& data(const std::string& label);
     std::ostream& text();
     std::ostream& text(const std::string& label);
+
+    std::string label(const std::string& label);
 
     // instructions
     void add(const std::string& dest, const std::string& source, const std::string& offset);
@@ -64,6 +71,12 @@ private:
     void sw(const int& offset, const std::string& dest, const std::string& source);
     void jl(const std::string& store, const std::string& jmp);
     void jr(const std::string& jmp);
+    void bz(const std::string& test, const std::string& jmp);
+    void j(const std::string& jmp);
+    void clt(const std::string& dest, const std::string& op1, const std::string& op2);
+    void cle(const std::string& dest, const std::string& op1, const std::string& op2);
+    void cgt(const std::string& dest, const std::string& op1, const std::string& op2);
+    void cge(const std::string& dest, const std::string& op1, const std::string& op2);
 };
 
 }}
