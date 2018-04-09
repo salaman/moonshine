@@ -33,6 +33,7 @@ public:
 
     virtual void accept(Visitor* visitor) = 0; // TODO: make const param
     std::shared_ptr<semantic::SymbolTable>& symbolTable();
+    const std::shared_ptr<semantic::SymbolTable>& symbolTable() const;
     std::shared_ptr<semantic::SymbolTable> closestSymbolTable();
     const std::shared_ptr<semantic::SymbolTableEntry>& symbolTableEntry() const;
     std::shared_ptr<semantic::SymbolTableEntry>& symbolTableEntry();

@@ -20,8 +20,8 @@ void MemorySizeComputerVisitor::visit(ast::prog* node)
     auto programTable = programEntry->link();
 
     for (auto entry = programTable->begin(); entry != programTable->end(); ++entry) {
-        entry->second->setOffset(programEntry->size());
         programEntry->setSize(programEntry->size() + entry->second->size());
+        entry->second->setOffset(programEntry->size());
     }
 
     programTable->setSize(programEntry->size());
@@ -58,8 +58,8 @@ void MemorySizeComputerVisitor::visit(ast::classDecl* node)
     auto table = node->symbolTable();
 
     for (auto entry = table->begin(); entry != table->end(); ++entry) {
-        entry->second->setOffset(table->size());
         table->setSize(table->size() + entry->second->size());
+        entry->second->setOffset(table->size());
     }
 
     node->symbolTableEntry()->setSize(table->size());
@@ -71,9 +71,15 @@ void MemorySizeComputerVisitor::visit(ast::funcDef* node)
 
     auto table = node->symbolTable();
 
+    // stack frame contains the return value at the bottom of the stack
+    table->setSize(table->size() + getPrimitiveSize(dynamic_cast<FunctionType*>(node->symbolTableEntry()->type())->returnType.type));
+
+    // and the return address
+    table->setSize(table->size() + 4);
+
     for (auto entry = table->begin(); entry != table->end(); ++entry) {
-        entry->second->setOffset(table->size());
         table->setSize(table->size() + entry->second->size());
+        entry->second->setOffset(table->size());
     }
 
     node->symbolTableEntry()->setSize(table->size());
@@ -104,8 +110,8 @@ void MemorySizeComputerVisitor::visit(ast::forStat* node)
     forVarDeclEntry->setSize(size);
 
     for (auto entry = table->begin(); entry != table->end(); ++entry) {
-        entry->second->setOffset(table->size());
         table->setSize(table->size() + entry->second->size());
+        entry->second->setOffset(table->size());
     }
 
     node->symbolTableEntry()->setSize(table->size());

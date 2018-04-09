@@ -64,7 +64,7 @@ int main(int argc, const char** argv)
 
     // program output
 
-    std::ofstream programOutput("/Users/Chris/Downloads/moon/program.asm", std::ios::trunc); // use file
+    std::ofstream programOutput("program.m", std::ios::trunc); // use file
     //std::ostream& programOutput = std::cout;  // use stdout
     //std::ofstream programOutput; // disable output
 

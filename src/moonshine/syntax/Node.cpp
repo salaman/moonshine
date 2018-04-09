@@ -166,8 +166,12 @@ void Node::subnodeGraphviz(std::ostream& s) const
     while (xsibs != nullptr) {
         s << "    " << reinterpret_cast<std::uintptr_t>(xsibs) << R"( [label=")" << xsibs->name();// << "\"]";
 
+        if (xsibs->symbolTable()) {
+            s << "*";
+        }
+
         if (xsibs->symbolTableEntry()) {
-            s << "\\n" << xsibs->symbolTableEntry()->name();
+            s << "\\n" << xsibs->symbolTableEntry()->name() << " : " << xsibs->symbolTableEntry()->type()->str();
         }
 
         if (xsibs->type()) {
@@ -230,6 +234,11 @@ const std::shared_ptr<semantic::SymbolTableEntry>& Node::symbolTableEntry() cons
     return symbolTableEntry_;
 }
 
+const std::shared_ptr<semantic::SymbolTable>& Node::symbolTable() const
+{
+    return symbolTable_;
+}
+
 bool Leaf::isLeaf() const
 {
     return !leftmostChild_;
@@ -246,8 +255,12 @@ void Leaf::subnodeGraphviz(std::ostream& s) const
     while (xsibs != nullptr) {
         s << "    " << reinterpret_cast<std::uintptr_t>(xsibs) << R"( [label=")" << xsibs->name();// << "\"]";
 
+        if (xsibs->symbolTable()) {
+            s << "*";
+        }
+
         if (xsibs->symbolTableEntry()) {
-            s << "\\n" << xsibs->symbolTableEntry()->name();
+            s << "\\n" << xsibs->symbolTableEntry()->name() << " : " << xsibs->symbolTableEntry()->type()->str();
         }
 
         if (xsibs->type()) {

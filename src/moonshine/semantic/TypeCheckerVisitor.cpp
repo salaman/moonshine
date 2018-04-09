@@ -261,6 +261,9 @@ void TypeCheckerVisitor::visit(ast::dataMember* node)
                 } else {
                     type->type = t->type;
                     type->className = t->className;
+
+                    // for code generation, set the dataMember's entry to where the data resides
+                    node->symbolTableEntry() = entry;
                 }
 
                 //node->setType(std::unique_ptr<VariableType>(new VariableType(*type)));
@@ -361,6 +364,13 @@ void TypeCheckerVisitor::visit(ast::fCall* node)
                 std::unique_ptr<VariableType> type(new VariableType(t->returnType));
                 node->setType(std::unique_ptr<VariableType>(new VariableType(*type)));
                 varNode->setType(std::move(type));
+
+                node->symbolTableEntry() = std::make_shared<SymbolTableEntry>();
+                node->symbolTableEntry()->setName(nextTempVar());
+                node->symbolTableEntry()->setKind(SymbolTableEntryKind::TEMPVAR);
+                node->symbolTableEntry()->setType(std::unique_ptr<VariableType>(new VariableType(*node->type())));
+                table->addEntry(node->symbolTableEntry());
+
             } else {
                 // the symbol exists, but is not a function
                 std::unique_ptr<VariableType> type(new VariableType());
@@ -432,7 +442,9 @@ void TypeCheckerVisitor::visit(ast::var* node)
 
     // TODO: merge this into TypeCheckerVisitor::visit(dataMember)?
 
-    node->symbolTableEntry() = (*table)[dynamic_cast<ast::id*>(node->child(0)->child(0))->token()->value];
+    node->symbolTableEntry() = node->child()->symbolTableEntry();
+
+    //node->symbolTableEntry() = (*table)[dynamic_cast<ast::id*>(node->child(0)->child(0))->token()->value];
 }
 
 void TypeCheckerVisitor::aParamsToVariableTypes(std::vector<VariableType>& types, const ast::aParams* node) const
