@@ -1,5 +1,5 @@
 prog             -> @prog @classList classDeclList @funcDefList funcDefList program funcBody @4,1 ;
-classDecl        -> @classDecl class @id id @inherList classInheritList classBody ; @4.1
+classDecl        -> @classDecl class @id id @inherList classInheritList classBody ; @4,1
 classInheritList -> : @id id @2,1 classInheritCont
 classInheritList -> EPSILON
 classInheritCont -> , @id id @2,1 classInheritCont
