@@ -23,6 +23,7 @@ void SymbolTableClassDeclLinkerVisitor::visit(ast::classDecl* node)
         // check if this symbol has been previously declared in this scope
         if ((*table)[node->symbolTableEntry()->name()]) {
             errors_->emplace_back(SemanticErrorType::REDECLARED_SYMBOL, dynamic_cast<ast::id*>(node->child(0))->token());
+            node->symbolTableEntry().reset();
         } else {
             table->addEntry(node->symbolTableEntry());
         }

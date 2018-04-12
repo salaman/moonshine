@@ -30,6 +30,7 @@ enum class SemanticErrorType {
     INCORRECT_TYPE_IN_FUNCTION_CALL,
     DUPLICATE_SUPER,
     CIRCULAR_INHERITANCE,
+    CIRCULAR_MEMBER,
 };
 
 enum class SemanticErrorLevel {

@@ -8,7 +8,7 @@
 #include <utility>
 #include <algorithm>
 #include <vector>
-#include <iostream>
+//#include <iostream>
 
 namespace moonshine { namespace semantic {
 
@@ -29,6 +29,7 @@ void InheritanceResolverVisitor::visit(ast::classList* node)
         std::map<std::string, bool> leaf;
         std::map<std::string, std::string> tree;
         supers.emplace_back(classEntry->name());
+        tree[classEntry->name()] = classEntry->name();
         //std::cout << classEntry->name() << std::endl;
 
         for (std::vector<std::string>::size_type i = 0; i < supers.size(); ++i) {
@@ -142,6 +143,66 @@ void InheritanceResolverVisitor::visit(ast::membList* node)
             if ((*super->link())[entry->name()]) {
                 errors_->emplace_back(SemanticErrorType::SHADOWED_VARIABLE, dynamic_cast<ast::id*>(n->child(1))->token(), SemanticErrorLevel::WARN);
                 n->marked = true;
+            }
+        }
+    }
+}
+
+void InheritanceResolverVisitor::visit(ast::classDecl* node)
+{
+    Visitor::visit(node);
+
+    // find closest symbol table
+    auto table = node->closestSymbolTable();
+    auto classEntry = node->symbolTableEntry();
+
+    if (!classEntry) {
+        return;
+    }
+
+    //std::cout << classEntry->name() << std::endl;
+
+    for (const auto& entry : *classEntry->link()) {
+        auto type = dynamic_cast<VariableType*>(entry.second->type());
+
+        if (entry.second->kind() != SymbolTableEntryKind::VARIABLE || type->type != Type::CLASS) {
+            continue;
+        }
+
+        //std::cout << ">> " << type->className << std::endl;
+
+        std::vector<std::string> members;
+        members.emplace_back(type->className);
+
+        for (std::vector<std::string>::size_type i = 0; i < members.size(); ++i) {
+            auto currentMember = members[i];
+
+            for (const auto& e : *(*table)[currentMember]->link()) {
+                auto memberType = dynamic_cast<VariableType*>(e.second->type());
+
+                if (e.second->kind() != SymbolTableEntryKind::VARIABLE || memberType->type != Type::CLASS) {
+                    continue;
+                }
+
+                auto member = memberType->className;
+                //std::cout << ">>>> " << member << std::endl;
+
+                if (member == classEntry->name()) {
+                    //std::cout << ">>>> *** CIRCULAR! " << member << std::endl;
+
+                    std::shared_ptr<Token> token;
+                    for (auto varDecl = node->child(2)->child(); varDecl != nullptr; varDecl = varDecl->next()) {
+                        if (dynamic_cast<ast::id*>(varDecl->child(1))->token()->value == entry.first) {
+                            token = dynamic_cast<ast::id*>(varDecl->child(1))->token();
+                            break;
+                        }
+                    }
+                    errors_->emplace_back(SemanticErrorType::CIRCULAR_MEMBER, token);
+
+                    break;
+                } else if (std::find(members.begin(), members.end(), member) == members.end()) {
+                    members.emplace_back(member);
+                }
             }
         }
     }

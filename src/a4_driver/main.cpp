@@ -105,10 +105,20 @@ int main(int argc, const char** argv)
         visitors.emplace_back(new semantic::ShadowedSymbolCheckerVisitor());
         visitors.emplace_back(new semantic::TypeCheckerVisitor());
 
-        visitors.emplace_back(new code::MemorySizeComputerVisitor());
-        visitors.emplace_back(new code::StackCodeGeneratorVisitor(programOutput, programOutput));
+        // run semantic check visitors
+        for (auto& v : visitors) {
+            v->setErrorContainer(&errors);
+            astRoot->accept(v.get());
+        }
 
-        // run visitors
+        visitors.clear();
+
+        if (errors.empty()) {
+            visitors.emplace_back(new code::MemorySizeComputerVisitor());
+            visitors.emplace_back(new code::StackCodeGeneratorVisitor(programOutput, programOutput));
+        }
+
+        // run code generation visitors
         for (auto& v : visitors) {
             v->setErrorContainer(&errors);
             astRoot->accept(v.get());
@@ -194,6 +204,9 @@ int main(int argc, const char** argv)
                     break;
                 case semantic::SemanticErrorType::CIRCULAR_INHERITANCE:
                     errorOutput << "Circular inheritance";
+                    break;
+                case semantic::SemanticErrorType::CIRCULAR_MEMBER:
+                    errorOutput << "Circular member";
                     break;
             }
 

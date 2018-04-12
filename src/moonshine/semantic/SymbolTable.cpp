@@ -92,6 +92,15 @@ void SymbolTable::addEntry(const SymbolTable::entry_type& entry)
     entry->setParent(this);
 }
 
+void SymbolTable::removeEntry(const SymbolTableEntry::key_type& name)
+{
+    auto entry = entries_.find(name);
+
+    if (entry != entries_.end()) {
+        entries_.erase(entry);
+    }
+}
+
 void SymbolTable::print(std::ostream& s, std::string pad) const
 {
     std::string tableName = parent_

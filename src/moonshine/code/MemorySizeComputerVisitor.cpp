@@ -6,6 +6,8 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <map>
+//#include <iostream>
 
 namespace moonshine { namespace code {
 
@@ -32,14 +34,14 @@ void MemorySizeComputerVisitor::visit(ast::varDecl* node)
     Visitor::visit(node);
 
     auto entry = node->symbolTableEntry();
-    auto table = entry->parentTable();
+    //auto table = entry->parentTable();
     auto type = dynamic_cast<VariableType*>(entry->type());
 
     int size = 0;
 
     if (type->type == Type::CLASS) {
-        std::shared_ptr<SymbolTableEntry> classEntry = (*table)[type->className];
-        size = classEntry->size();
+        //std::shared_ptr<SymbolTableEntry> classEntry = (*table)[type->className];
+        //size = classEntry->size();
     } else {
         size = getPrimitiveSize(type->type);
 
@@ -51,18 +53,83 @@ void MemorySizeComputerVisitor::visit(ast::varDecl* node)
     entry->setSize(size);
 }
 
+void MemorySizeComputerVisitor::visit(ast::classList* node)
+{
+    Visitor::visit(node);
+
+    auto table = node->closestSymbolTable();
+
+    std::map<std::string, int> sizes;
+
+    while (true) {
+        bool done = true;
+
+        for (auto it = table->begin(); it != table->end(); ++it) {
+            std::shared_ptr<SymbolTableEntry> classEntry = it->second;
+
+            if (classEntry->kind() != SymbolTableEntryKind::CLASS) {
+                continue;
+            }
+
+            // if we've already successfully processed this class, skip it
+            if (sizes.find(classEntry->name()) != sizes.end()) {
+                continue;
+            }
+
+            int size = 0;
+            bool leaf = true;
+
+            // for all variable entries of the class' symbol table...
+            for (auto& entry : *classEntry->link()) {
+                if (entry.second->kind() != SymbolTableEntryKind::VARIABLE) {
+                    continue;
+                }
+
+                auto type = dynamic_cast<VariableType*>(entry.second->type());
+
+                if (type->type != Type::CLASS) {
+                    // for non-class members, we already have the size
+                    size += entry.second->size();
+                    entry.second->setOffset(size);
+                } else if (sizes.find(type->className) != sizes.end()) {
+                    // for class members, add the size if we already know it
+                    size += sizes[type->className];
+                    entry.second->setSize(sizes[type->className]);
+                    entry.second->setOffset(size);
+                } else {
+                    // this is an unprocessed entry
+                    leaf = false;
+                    done = false;
+                    break;
+                }
+            }
+
+            if (leaf) {
+                //std::cout << classEntry->name() << " = " << size << std::endl;
+                classEntry->setSize(size);
+                classEntry->link()->setSize(size);
+                sizes[classEntry->name()] = size;
+            }
+        }
+
+        if (done) {
+            break;
+        }
+    }
+}
+
 void MemorySizeComputerVisitor::visit(ast::classDecl* node)
 {
     Visitor::visit(node);
 
     auto table = node->symbolTable();
 
-    for (auto entry = table->begin(); entry != table->end(); ++entry) {
-        table->setSize(table->size() + entry->second->size());
-        entry->second->setOffset(table->size());
-    }
+    //for (auto entry = table->begin(); entry != table->end(); ++entry) {
+    //    table->setSize(table->size() + entry->second->size());
+    //    entry->second->setOffset(table->size());
+    //}
 
-    node->symbolTableEntry()->setSize(table->size());
+    //node->symbolTableEntry()->setSize(table->size());
 }
 
 void MemorySizeComputerVisitor::visit(ast::funcDef* node)
@@ -179,8 +246,8 @@ int MemorySizeComputerVisitor::getPrimitiveSize(const semantic::Type& type)
             return 4;
         case Type::FLOAT:
             return 8;
-        //case Type::CLASS:
-        //    return 0;
+            //case Type::CLASS:
+            //    return 0;
         default:
             throw std::runtime_error("MemorySizeComputerVisitor::getPrimitiveSize: Invalid type given");
     }

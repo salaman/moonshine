@@ -77,6 +77,7 @@ public:
     std::shared_ptr<SymbolTableEntry> operator[](const SymbolTableEntry::key_type& name);
     std::shared_ptr<SymbolTableEntry> get(const SymbolTableEntry::key_type& name);
     void addEntry(const entry_type& entry);
+    void removeEntry(const SymbolTableEntry::key_type& name);
 
     int size();
     void setSize(const int& size);
