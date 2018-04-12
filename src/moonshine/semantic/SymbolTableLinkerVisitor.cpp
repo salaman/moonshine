@@ -212,6 +212,7 @@ void SymbolTableLinkerVisitor::fparamListToSymbolTable(SymbolTable& table, ast::
                     errors_->emplace_back(SemanticErrorType::UNDECLARED_CLASS, dynamic_cast<ast::type*>(n->child(0))->token());
                 } else {
                     table.addEntry(entry);
+                    table.parentEntry()->addParameter(entry);
                 }
             }
         }

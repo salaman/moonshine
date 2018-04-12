@@ -49,6 +49,10 @@ void StackCodeGeneratorVisitor::visit(ast::num* node)
 {
     Visitor::visit(node);
 
+    if (!node->symbolTableEntry()) {
+        return;
+    }
+
     // TODO: float
     if (node->type()->type != semantic::Type::INT) {
         return;
@@ -272,9 +276,11 @@ void StackCodeGeneratorVisitor::visit(ast::returnStat* node)
 
 void StackCodeGeneratorVisitor::visit(ast::funcDef* node)
 {
+    auto function = node->symbolTableEntry();
+
     // create the tag to jump onto
     // and copy the jumping-back address value in the called function's stack frame
-    text(node->symbolTableEntry()->name()) << "% funcDef: " << node->symbolTableEntry()->name() << endl;
+    text(node->symbolTableEntry()->name()) << "% funcDef: " << function->name() << endl;
     sw(-8, SP, JL);
 
     // generate the code for the function body
@@ -310,10 +316,23 @@ void StackCodeGeneratorVisitor::visit(ast::fCall* node)
 
     auto table = node->closestSymbolTable();
     auto idNode = dynamic_cast<ast::id*>(node->child(0));
+    auto function = (*table)[idNode->token()->value];
 
-    text() << "% fCall: " << idNode->token()->value << endl;
+    text() << "% fCall: " << function->name() << endl;
 
     auto r1 = reg();
+
+    auto currentParam = function->parameters().begin();
+
+    for (auto aParam = node->child(1)->child(); aParam != nullptr; aParam = aParam->next()) {
+        text() << "%% fparam begin: " << (*currentParam)->name() << endl;
+
+        lw(r1, -aParam->symbolTableEntry()->offset(), SP);
+        sw(-table->size() - (*currentParam)->offset(), SP, r1);
+
+        text() << "% fparam end: " << (*currentParam)->name() << endl;
+        currentParam++;
+    }
 
     // make the stack frame pointer point to the called function's stack frame
     addi(SP, SP, -table->size());
@@ -321,7 +340,7 @@ void StackCodeGeneratorVisitor::visit(ast::fCall* node)
     // jump to the called function's code
     // here the function's name is the label
     // TODO: unique names? should we use label() for function names? perhaps create in funcDef and store in entry
-    jl(JL, idNode->token()->value);
+    jl(JL, function->name());
 
     // upon jumping back, set the stack frame pointer back to the current function's stack frame
     subi(SP, SP, -table->size());

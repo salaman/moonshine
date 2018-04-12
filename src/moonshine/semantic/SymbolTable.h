@@ -38,6 +38,7 @@ public:
     weak_type_type type() const;
     table_type link() const;
     const std::vector<std::shared_ptr<SymbolTableEntry>>& supers() const;
+    const std::vector<std::shared_ptr<SymbolTableEntry>>& parameters() const;
     bool hasReturn() const;
     void setName(const key_type& name);
     void setKind(const SymbolTableEntryKind& kind);
@@ -47,6 +48,7 @@ public:
     void setHasReturn(const bool& hasReturn);
     void addSuper(const std::shared_ptr<SymbolTableEntry>& super);
     void removeSuper(const std::string& super);
+    void addParameter(const std::shared_ptr<SymbolTableEntry>& parameter);
 
     int size();
     int offset();
@@ -60,6 +62,7 @@ private:
     weak_table_type parent_ = nullptr;
     bool hasReturn_ = false;
     std::vector<std::shared_ptr<SymbolTableEntry>> supers_;
+    std::vector<std::shared_ptr<SymbolTableEntry>> parameters_;
 
     int size_;
     int offset_;

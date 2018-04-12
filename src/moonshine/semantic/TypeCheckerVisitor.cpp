@@ -177,12 +177,15 @@ void TypeCheckerVisitor::visit(ast::num* node)
 
     node->setType(std::move(type));
 
-    auto table = node->closestSymbolTable();
-    node->symbolTableEntry() = std::make_shared<SymbolTableEntry>();
-    node->symbolTableEntry()->setName(nextTempVar());
-    node->symbolTableEntry()->setKind(SymbolTableEntryKind::LITERAL);
-    node->symbolTableEntry()->setType(std::unique_ptr<VariableType>(new VariableType(*node->type())));
-    table->addEntry(node->symbolTableEntry());
+    // for literals, we create a tempvar
+    if (!dynamic_cast<ast::dimList*>(node->parent())) {
+        auto table = node->closestSymbolTable();
+        node->symbolTableEntry() = std::make_shared<SymbolTableEntry>();
+        node->symbolTableEntry()->setName(nextTempVar());
+        node->symbolTableEntry()->setKind(SymbolTableEntryKind::LITERAL);
+        node->symbolTableEntry()->setType(std::unique_ptr<VariableType>(new VariableType(*node->type())));
+        table->addEntry(node->symbolTableEntry());
+    }
 }
 
 void TypeCheckerVisitor::visit(ast::indexList* node)

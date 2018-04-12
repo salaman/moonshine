@@ -34,14 +34,41 @@ void MemorySizeComputerVisitor::visit(ast::varDecl* node)
     Visitor::visit(node);
 
     auto entry = node->symbolTableEntry();
-    //auto table = entry->parentTable();
+    auto table = entry->parentTable();
     auto type = dynamic_cast<VariableType*>(entry->type());
 
     int size = 0;
 
     if (type->type == Type::CLASS) {
-        //std::shared_ptr<SymbolTableEntry> classEntry = (*table)[type->className];
-        //size = classEntry->size();
+        // ignore varDecl within classes, those are dealt with in the classList visitor
+        if (!dynamic_cast<ast::membList*>(node->parent())) {
+            std::shared_ptr<SymbolTableEntry> classEntry = (*table)[type->className];
+            size = classEntry->size();
+        }
+    } else {
+        size = getPrimitiveSize(type->type);
+
+        for (const auto& i : type->indices) {
+            size *= i;
+        }
+    }
+
+    entry->setSize(size);
+}
+
+void MemorySizeComputerVisitor::visit(ast::fparam* node)
+{
+    Visitor::visit(node);
+
+    auto entry = node->symbolTableEntry();
+    auto table = entry->parentTable();
+    auto type = dynamic_cast<VariableType*>(entry->type());
+
+    int size = 0;
+
+    if (type->type == Type::CLASS) {
+        std::shared_ptr<SymbolTableEntry> classEntry = (*table)[type->className];
+        size = classEntry->size();
     } else {
         size = getPrimitiveSize(type->type);
 
@@ -215,7 +242,9 @@ void MemorySizeComputerVisitor::visit(ast::num* node)
 {
     Visitor::visit(node);
 
-    node->symbolTableEntry()->setSize(getPrimitiveSize(node->type()->type));
+    if (node->symbolTableEntry()) {
+        node->symbolTableEntry()->setSize(getPrimitiveSize(node->type()->type));
+    }
 }
 
 void MemorySizeComputerVisitor::visit(ast::var* node)

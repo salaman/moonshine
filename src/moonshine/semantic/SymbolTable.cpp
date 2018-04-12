@@ -369,4 +369,14 @@ void SymbolTableEntry::setOffset(const int& offset)
     offset_ = offset;
 }
 
+const std::vector<std::shared_ptr<SymbolTableEntry>>& SymbolTableEntry::parameters() const
+{
+    return parameters_;
+}
+
+void SymbolTableEntry::addParameter(const std::shared_ptr<SymbolTableEntry>& parameter)
+{
+    parameters_.emplace_back(parameter);
+}
+
 }}
