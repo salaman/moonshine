@@ -171,6 +171,11 @@ void MemorySizeComputerVisitor::visit(ast::funcDef* node)
     // and the return address
     table->setSize(table->size() + 4);
 
+    // if this is a member function, we need the object offset
+    if (!dynamic_cast<ast::nul*>(node->child(2))) {
+        table->setSize(table->size() + 4);
+    }
+
     for (auto entry = table->begin(); entry != table->end(); ++entry) {
         table->setSize(table->size() + entry->second->size());
         entry->second->setOffset(table->size());
@@ -261,9 +266,9 @@ void MemorySizeComputerVisitor::visit(ast::var* node)
     //node->symbolTableEntry()->setOffset(node->child()->relativeOffset);
     //table->addEntry(node->symbolTableEntry());
 
-    //if (node->symbolTableEntry()) {
-    //    node->symbolTableEntry()->setSize(getPrimitiveSize(node->type()->type));
-    //}
+    if (node->symbolTableEntry()) {
+        node->symbolTableEntry()->setSize(getPrimitiveSize(Type::INT));
+    }
 }
 
 int MemorySizeComputerVisitor::getPrimitiveSize(const semantic::Type& type)
@@ -291,8 +296,17 @@ void MemorySizeComputerVisitor::visit(ast::fCall* node)
 {
     Visitor::visit(node);
 
+    //if (node->symbolTableEntry()) {
+    //    node->symbolTableEntry()->setSize(getPrimitiveSize(node->type()->type));
+    //}
+}
+
+void MemorySizeComputerVisitor::visit(ast::aParams* node)
+{
+    Visitor::visit(node);
+
     if (node->symbolTableEntry()) {
-        node->symbolTableEntry()->setSize(getPrimitiveSize(node->type()->type));
+        node->symbolTableEntry()->setSize(getPrimitiveSize(dynamic_cast<VariableType*>(node->symbolTableEntry()->type())->type));
     }
 }
 

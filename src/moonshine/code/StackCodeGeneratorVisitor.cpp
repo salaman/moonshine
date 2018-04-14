@@ -70,10 +70,33 @@ void StackCodeGeneratorVisitor::visit(ast::num* node)
 
 void StackCodeGeneratorVisitor::visit(ast::var* node)
 {
-    Visitor::visit(node);
-
     auto table = node->closestSymbolTable();
 
+    text() << "% var begin: " << node->symbolTableEntry()->name() << endl;
+
+    // initialize offset var to current stack pointer
+    auto r1 = reg();
+    sw(-node->symbolTableEntry()->offset(), SP, SP);
+    regPush(r1);
+
+    // evaluate dataMembers and fCalls
+    Visitor::visit(node);
+
+    // if the last child was a dataMember, we should adjust our offset by adding the var size to it
+    // since we'll be pointing at the top of the variable on the stack instead of the bottom
+    if (dynamic_cast<ast::dataMember*>(node->rightmostChild())) {
+        text() << "% var: adjust offset" << endl;
+
+        r1 = reg();
+        lw(r1, -node->symbolTableEntry()->offset(), SP);
+        addi(r1, r1, -node->symbolTableEntry()->size());
+        sw(-node->symbolTableEntry()->offset(), SP, r1);
+        regPush(r1);
+    }
+
+    text() << "% var end" << endl;
+
+    /*
     node->symbolTableEntry() = std::make_shared<semantic::SymbolTableEntry>();
     node->symbolTableEntry()->setName(node->child()->symbolTableEntry()->name());
     node->symbolTableEntry()->setKind(node->child()->symbolTableEntry()->kind());
@@ -86,15 +109,7 @@ void StackCodeGeneratorVisitor::visit(ast::var* node)
     } else {
         node->symbolTableEntry()->setOffset(node->child()->symbolTableEntry()->offset());
     }
-
-    //text() << "% var: " << node->symbolTableEntry()->name() << endl;
-    //
-    //auto r1 = reg();
-    //
-    //lw(r1, -(*table)[dynamic_cast<ast::id*>(node->child(0)->child(0))->token()->value]->offset(), SP);
-    //sw(-node->symbolTableEntry()->offset(), SP, r1);
-    //
-    //regPush(r1);
+     */
 }
 
 void StackCodeGeneratorVisitor::visit(ast::addOp* node)
@@ -109,7 +124,16 @@ void StackCodeGeneratorVisitor::visit(ast::addOp* node)
            << node->child(0)->symbolTableEntry()->name() << ' ' << node->token()->value << ' ' << node->child(1)->symbolTableEntry()->name() << endl;
 
     lw(r1, -node->child(0)->symbolTableEntry()->offset(), SP);
+    if (dynamic_cast<ast::var*>(node->child(0))) {
+        // indirect
+        lw(r1, 0, r1);
+    }
+
     lw(r2, -node->child(1)->symbolTableEntry()->offset(), SP);
+    if (dynamic_cast<ast::var*>(node->child(1))) {
+        // indirect
+        lw(r2, 0, r2);
+    }
 
     switch (node->token()->type) {
         case TokenType::T_PLUS:
@@ -145,7 +169,16 @@ void StackCodeGeneratorVisitor::visit(ast::multOp* node)
 
     // load data from lhs and rhs
     lw(r1, -node->child(0)->symbolTableEntry()->offset(), SP);
+    if (dynamic_cast<ast::var*>(node->child(0))) {
+        // indirect
+        lw(r1, 0, r1);
+    }
+
     lw(r2, -node->child(1)->symbolTableEntry()->offset(), SP);
+    if (dynamic_cast<ast::var*>(node->child(1))) {
+        // indirect
+        lw(r2, 0, r2);
+    }
 
     switch (node->token()->type) {
         case TokenType::T_MUL:
@@ -181,7 +214,16 @@ void StackCodeGeneratorVisitor::visit(ast::relOp* node)
 
     // load data from lhs and rhs
     lw(r1, -node->child(0)->symbolTableEntry()->offset(), SP);
+    if (dynamic_cast<ast::var*>(node->child(0))) {
+        // indirect
+        lw(r1, 0, r1);
+    }
+
     lw(r2, -node->child(1)->symbolTableEntry()->offset(), SP);
+    if (dynamic_cast<ast::var*>(node->child(1))) {
+        // indirect
+        lw(r2, 0, r2);
+    }
 
     // add and store
     switch (node->token()->type) {
@@ -221,10 +263,23 @@ void StackCodeGeneratorVisitor::visit(ast::assignStat* node)
     text() << "% assignStat: " << node->child(0)->symbolTableEntry()->name() << " := " <<  node->child(1)->symbolTableEntry()->name() << endl;
 
     auto r1 = reg();
+    auto r2 = reg();
 
-    lw(r1, -node->child(1)->symbolTableEntry()->offset(), SP);
-    sw(-node->child(0)->symbolTableEntry()->offset(), SP, r1);
+    // load the indirected offset from the lhs tempvar
+    lw(r1, -node->child(0)->symbolTableEntry()->offset(), SP);
 
+    // load the value to be copied
+    lw(r2, -node->child(1)->symbolTableEntry()->offset(), SP);
+
+    if (dynamic_cast<ast::var*>(node->child(1))) {
+        // indirect, must fetch
+        lw(r2, 0, r2);
+    }
+
+    // assign
+    sw(0, r1, r2);
+
+    regPush(r2);
     regPush(r1);
 }
 
@@ -240,6 +295,10 @@ void StackCodeGeneratorVisitor::visit(ast::putStat* node)
 
     // put the value to be printed into a register
     lw(r1, -node->child()->symbolTableEntry()->offset(), SP);
+    if (dynamic_cast<ast::var*>(node->child())) {
+        // indirect
+        lw(r1, 0, r1);
+    }
 
     // make the stack frame pointer point to the called function's stack frame
     addi(SP, SP, -table->size()); // put value on stack
@@ -269,6 +328,11 @@ void StackCodeGeneratorVisitor::visit(ast::returnStat* node)
     auto r1 = reg();
 
     lw(r1, -node->child()->symbolTableEntry()->offset(), SP);
+    if (dynamic_cast<ast::var*>(node->child())) {
+        // indirect
+        lw(r1, 0, r1);
+    }
+
     sw(-4, SP, r1);
 
     regPush(r1);
@@ -299,15 +363,25 @@ void StackCodeGeneratorVisitor::visit(ast::dataMember* node)
 {
     Visitor::visit(node);
 
-    auto table = node->closestSymbolTable().get();
+    //auto table = node->symbolTableEntry()->parentTable();
+    auto idNode = dynamic_cast<ast::id*>(node->child(0));
     auto entry = node->symbolTableEntry();
     int offset = entry->offset();
-    while (table && table != entry->parentTable()) {
-        table = table->parentEntry()->parentTable();
-        offset -= table->size();
-    }
+    //while (table && table != entry->parentTable()) {
+    //    table = table->parentEntry()->parentTable();
+    //    offset -= table->size();
+    //}
+    //node->relativeOffset = offset;
 
-    node->relativeOffset = offset;
+    text() << "% dataMember: " << idNode->token()->value << endl;
+
+    auto r1 = reg();
+
+    lw(r1, -node->parent()->symbolTableEntry()->offset(), SP);
+    addi(r1, r1, -offset + entry->size());
+    sw(-node->parent()->symbolTableEntry()->offset(), SP, r1);
+
+    regPush(r1);
 }
 
 void StackCodeGeneratorVisitor::visit(ast::fCall* node)
@@ -315,8 +389,9 @@ void StackCodeGeneratorVisitor::visit(ast::fCall* node)
     Visitor::visit(node);
 
     auto table = node->closestSymbolTable();
-    auto idNode = dynamic_cast<ast::id*>(node->child(0));
-    auto function = (*table)[idNode->token()->value];
+    //auto idNode = dynamic_cast<ast::id*>(node->child(0));
+    //auto function = (*table)[idNode->token()->value];
+    auto function = node->symbolTableEntry();
 
     text() << "% fCall: " << function->name() << endl;
 
@@ -348,7 +423,11 @@ void StackCodeGeneratorVisitor::visit(ast::fCall* node)
     // copy the return value in memory space to store it on the current stack frame
     // to evaluate the expression in which it is
     lw(r1, -table->size() - 4, SP);
-    sw(-node->symbolTableEntry()->offset(), SP, r1);
+    sw(-node->child(1)->symbolTableEntry()->offset(), SP, r1);
+
+    // hack: for indirection to work, we set the var's offset to the address of our hidden tempvar
+    addi(r1, SP, -node->child(1)->symbolTableEntry()->offset());
+    sw(-node->parent()->symbolTableEntry()->offset(), SP, r1);
 
     regPush(r1);
 }

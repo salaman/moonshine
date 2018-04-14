@@ -325,6 +325,9 @@ void TypeCheckerVisitor::visit(ast::dataMember* node)
             } else {
                 type->type = t->type;
                 type->className = t->className;
+
+                // for code generation, set the dataMember's entry to where the data resides
+                node->symbolTableEntry() = member;
             }
 
             varNode->setType(std::move(type));
@@ -378,12 +381,15 @@ void TypeCheckerVisitor::visit(ast::fCall* node)
                 node->setType(std::unique_ptr<VariableType>(new VariableType(*type)));
                 varNode->setType(std::move(type));
 
-                node->symbolTableEntry() = std::make_shared<SymbolTableEntry>();
-                node->symbolTableEntry()->setName(nextTempVar());
-                node->symbolTableEntry()->setKind(SymbolTableEntryKind::TEMPVAR);
-                node->symbolTableEntry()->setType(std::unique_ptr<VariableType>(new VariableType(*node->type())));
-                table->addEntry(node->symbolTableEntry());
+                // hack: make aParams hold a tempvar for the result of this function call
+                node->child(1)->symbolTableEntry() = std::make_shared<SymbolTableEntry>();
+                node->child(1)->symbolTableEntry()->setName(nextTempVar());
+                node->child(1)->symbolTableEntry()->setKind(SymbolTableEntryKind::TEMPVAR);
+                node->child(1)->symbolTableEntry()->setType(std::unique_ptr<VariableType>(new VariableType(*node->type())));
+                table->addEntry(node->child(1)->symbolTableEntry());
 
+                // for code generation, set the dataMember's entry to where the data resides
+                node->symbolTableEntry() = entry;
             } else {
                 // the symbol exists, but is not a function
                 std::unique_ptr<VariableType> type(new VariableType());
@@ -408,7 +414,7 @@ void TypeCheckerVisitor::visit(ast::fCall* node)
         auto entry = (*table)[varNode->type()->className];
         auto member = (*entry->link())[idNode->token()->value];
 
-        if (!member) {
+        if (!member || !member->parentTable()->parentEntry()) {
             // the class is valid, but the function doesn't exist in the class
             std::unique_ptr<VariableType> type(new VariableType());
             type->type = Type::ERROR;
@@ -421,6 +427,16 @@ void TypeCheckerVisitor::visit(ast::fCall* node)
                 // set our type to its return type
                 std::unique_ptr<VariableType> type(new VariableType(t->returnType));
                 varNode->setType(std::move(type));
+
+                // hack: make aParams hold a tempvar for the result of this function call
+                node->child(1)->symbolTableEntry() = std::make_shared<SymbolTableEntry>();
+                node->child(1)->symbolTableEntry()->setName(nextTempVar());
+                node->child(1)->symbolTableEntry()->setKind(SymbolTableEntryKind::TEMPVAR);
+                node->child(1)->symbolTableEntry()->setType(std::unique_ptr<VariableType>(new VariableType(*varNode->type())));
+                table->addEntry(node->child(1)->symbolTableEntry());
+
+                // for code generation, set the dataMember's entry to where the data resides
+                node->symbolTableEntry() = member;
             } else {
                 // there is a parameter mismatch
                 std::unique_ptr<VariableType> type(new VariableType());
@@ -452,6 +468,15 @@ void TypeCheckerVisitor::visit(ast::var* node)
     Visitor::visit(node);
 
     auto table = node->closestSymbolTable();
+
+    node->symbolTableEntry() = std::make_shared<SymbolTableEntry>();
+    node->symbolTableEntry()->setName(nextTempVar());
+    node->symbolTableEntry()->setKind(SymbolTableEntryKind::TEMPVAR);
+    //node->symbolTableEntry()->setType(std::unique_ptr<VariableType>(new VariableType(*node->type())));
+    std::unique_ptr<VariableType> type(new VariableType());
+    type->type = Type::INT;
+    node->symbolTableEntry()->setType(std::move(type));
+    table->addEntry(node->symbolTableEntry());
 
     // TODO: merge this into TypeCheckerVisitor::visit(dataMember)?
 
