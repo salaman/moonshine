@@ -74,9 +74,30 @@ void StackCodeGeneratorVisitor::visit(ast::var* node)
 
     text() << "% var begin: " << node->symbolTableEntry()->name() << endl;
 
-    // initialize offset var to current stack pointer
     auto r1 = reg();
-    sw(-node->symbolTableEntry()->offset(), SP, SP);
+
+    // if the first child is a dataMember, we should see where to initially set our pointer to
+    if (dynamic_cast<ast::dataMember*>(node->child())) {
+        if (node->child()->symbolTableEntry()->parentTable() == table.get()) {
+            // within our own symbol table
+            // initialize offset var to current stack pointer
+            text() << "% var: initial offset for own var" << endl;
+            sw(-node->symbolTableEntry()->offset(), SP, SP);
+        } else if (node->child()->symbolTableEntry()->parentTable()->parentEntry()->kind() == semantic::SymbolTableEntryKind::CLASS) {
+            // inherited member from a class symbol table
+            // initialize offset var to the top address of the dataMember's data
+            text() << "% var: initial offset for member var" << endl;
+            auto thisVar = (*table)["this"];
+            lw(r1, -thisVar->offset(), SP);
+            sw(-node->symbolTableEntry()->offset(), SP, r1);
+        } else {
+            // a nested block (forStat)
+            text() << "% var: initial offset for scope var" << endl;
+            addi(r1, SP, node->child()->symbolTableEntry()->parentTable()->size());
+            sw(-node->symbolTableEntry()->offset(), SP, r1);
+        }
+    }
+
     regPush(r1);
 
     // evaluate dataMembers and fCalls
@@ -95,21 +116,6 @@ void StackCodeGeneratorVisitor::visit(ast::var* node)
     }
 
     text() << "% var end" << endl;
-
-    /*
-    node->symbolTableEntry() = std::make_shared<semantic::SymbolTableEntry>();
-    node->symbolTableEntry()->setName(node->child()->symbolTableEntry()->name());
-    node->symbolTableEntry()->setKind(node->child()->symbolTableEntry()->kind());
-    //node->symbolTableEntry()->setType(std::unique_ptr<SymbolType>(new SymbolType(*node->child()->symbolTableEntry()->type())));
-    node->symbolTableEntry()->setSize(node->child()->symbolTableEntry()->size());
-
-    // TODO
-    if (dynamic_cast<ast::dataMember*>(node->child())) {
-        node->symbolTableEntry()->setOffset(node->child()->relativeOffset);
-    } else {
-        node->symbolTableEntry()->setOffset(node->child()->symbolTableEntry()->offset());
-    }
-     */
 }
 
 void StackCodeGeneratorVisitor::visit(ast::addOp* node)
@@ -366,7 +372,7 @@ void StackCodeGeneratorVisitor::visit(ast::dataMember* node)
     //auto table = node->symbolTableEntry()->parentTable();
     auto idNode = dynamic_cast<ast::id*>(node->child(0));
     auto entry = node->symbolTableEntry();
-    int offset = entry->offset();
+    //int offset = entry->offset();
     //while (table && table != entry->parentTable()) {
     //    table = table->parentEntry()->parentTable();
     //    offset -= table->size();
@@ -377,8 +383,10 @@ void StackCodeGeneratorVisitor::visit(ast::dataMember* node)
 
     auto r1 = reg();
 
+    // in the var's tempvar, we store an address to the *top* of where the data is located for this dataMember,
+    // which is its -offset plus its size
     lw(r1, -node->parent()->symbolTableEntry()->offset(), SP);
-    addi(r1, r1, -offset + entry->size());
+    addi(r1, r1, -entry->offset() + entry->size());
     sw(-node->parent()->symbolTableEntry()->offset(), SP, r1);
 
     regPush(r1);
@@ -409,8 +417,13 @@ void StackCodeGeneratorVisitor::visit(ast::fCall* node)
         currentParam++;
     }
 
+    lw(r1, -node->parent()->symbolTableEntry()->offset(), SP);
+
     // make the stack frame pointer point to the called function's stack frame
     addi(SP, SP, -table->size());
+
+    auto thisVar = (*function->link())["this"];
+    sw(-thisVar->offset(), SP, r1);
 
     // jump to the called function's code
     // here the function's name is the label

@@ -237,6 +237,16 @@ void TypeCheckerVisitor::visit(ast::funcDef* node)
         // this function has a return but can't have one
         errors_->emplace_back(SemanticErrorType::INVALID_RETURN, idNode->token()); // TODO: this error should probably be on the returnStat
     }
+
+    // create an entry for the this pointer
+    auto table = node->symbolTable();
+    auto thisVar = std::make_shared<SymbolTableEntry>();
+    thisVar->setName("this");
+    thisVar->setKind(SymbolTableEntryKind::TEMPVAR);
+    std::unique_ptr<VariableType> thisType(new VariableType());
+    thisType->type = Type::INT;
+    thisVar->setType(std::move(thisType));
+    table->addEntry(thisVar);
 }
 
 void TypeCheckerVisitor::visit(ast::dataMember* node)
