@@ -69,6 +69,7 @@ private:
     void subi(const std::string& dest, const std::string& source, const std::string& immediate);
     void subi(const std::string& dest, const std::string& source, const int& immediate);
     void mul(const std::string& dest, const std::string& source, const std::string& offset);
+    void muli(const std::string& dest, const std::string& source, const int& immediate);
     void div(const std::string& dest, const std::string& source, const std::string& offset);
     void lw(const std::string& dest, const int& offset, const std::string& source);
     void sw(const int& offset, const std::string& dest, const std::string& source);

@@ -369,26 +369,55 @@ void StackCodeGeneratorVisitor::visit(ast::dataMember* node)
 {
     Visitor::visit(node);
 
-    //auto table = node->symbolTableEntry()->parentTable();
     auto idNode = dynamic_cast<ast::id*>(node->child(0));
     auto entry = node->symbolTableEntry();
-    //int offset = entry->offset();
-    //while (table && table != entry->parentTable()) {
-    //    table = table->parentEntry()->parentTable();
-    //    offset -= table->size();
-    //}
-    //node->relativeOffset = offset;
 
     text() << "% dataMember: " << idNode->token()->value << endl;
 
     auto r1 = reg();
+    auto r2 = reg();
+    auto r3 = reg();
 
     // in the var's tempvar, we store an address to the *top* of where the data is located for this dataMember,
     // which is its -offset plus its size
     lw(r1, -node->parent()->symbolTableEntry()->offset(), SP);
     addi(r1, r1, -entry->offset() + entry->size());
+
+    // for indices, we calculate an offset amount to move down from the top of the data
+    if (node->child(1)->child()) {
+        int size = node->parent()->symbolTableEntry()->size();
+
+        // start the offset at zero
+        addi(r2, ZR, 0);
+        for (auto index = node->child(1)->child(); index != nullptr; index = index->next()) {
+            text() << "% dataMember: index " << index->symbolTableEntry()->name() << endl;
+
+            // for every index, we load the int index value from the indice's tempvar
+            lw(r3, -index->symbolTableEntry()->offset(), SP);
+            if (dynamic_cast<ast::var*>(index)) {
+                // indirect
+                lw(r3, 0, r3);
+            }
+
+            // we multiply the offset we already have by the size of each cell
+            muli(r2, r2, size);
+
+            // and we add the index value to the running offset
+            add(r2, r2, r3);
+        }
+
+        // finally, we mulitply the whole offset by the cell size
+        muli(r2, r2, size);
+
+        // and adjust the var offset accordingly by moving it down to the correct position,
+        // where it now points at the top of the data cell
+        sub(r1, r1, r2);
+    }
+
     sw(-node->parent()->symbolTableEntry()->offset(), SP, r1);
 
+    regPush(r3);
+    regPush(r2);
     regPush(r1);
 }
 
@@ -562,6 +591,11 @@ void StackCodeGeneratorVisitor::subi(const std::string& dest, const std::string&
 void StackCodeGeneratorVisitor::mul(const std::string& dest, const std::string& source, const std::string& offset)
 {
     text() << "mul " << dest << ',' << source << ',' << offset << endl;
+}
+
+void StackCodeGeneratorVisitor::muli(const std::string& dest, const std::string& source, const int& immediate)
+{
+    text() << "muli " << dest << ',' << source << ',' << immediate << endl;
 }
 
 void StackCodeGeneratorVisitor::div(const std::string& dest, const std::string& source, const std::string& offset)
