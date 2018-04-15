@@ -246,6 +246,7 @@ void TypeCheckerVisitor::visit(ast::funcDef* node)
     std::unique_ptr<VariableType> thisType(new VariableType());
     thisType->type = Type::INT;
     thisVar->setType(std::move(thisType));
+    thisVar->setSize(4);
     table->addEntry(thisVar);
 }
 
