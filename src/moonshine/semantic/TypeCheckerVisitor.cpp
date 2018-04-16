@@ -86,6 +86,7 @@ void TypeCheckerVisitor::visit(ast::relOp* node)
         node->symbolTableEntry()->setKind(SymbolTableEntryKind::TEMPVAR);
         std::unique_ptr<VariableType> type(new VariableType());
         type->type = Type::INT;
+        node->setType(std::unique_ptr<VariableType>(new VariableType(*type)));
         node->symbolTableEntry()->setType(std::move(type));
         table->addEntry(node->symbolTableEntry());
     } else {
@@ -205,17 +206,36 @@ void TypeCheckerVisitor::visit(ast::notFactor* node)
     Visitor::visit(node);
 
     // bubble up child type
-    std::unique_ptr<VariableType> type(new VariableType(*node->child()->type()));
-    node->setType(std::move(type));
+    //std::unique_ptr<VariableType> type(new VariableType(*node->child()->type()));
+    //node->setType(std::move(type));
+
+    auto table = node->closestSymbolTable();
+    node->symbolTableEntry() = std::make_shared<SymbolTableEntry>();
+    node->symbolTableEntry()->setName(nextTempVar());
+    node->symbolTableEntry()->setKind(SymbolTableEntryKind::TEMPVAR);
+    std::unique_ptr<VariableType> type(new VariableType());
+    type->type = Type::INT;
+    node->setType(std::unique_ptr<VariableType>(new VariableType(*type)));
+    node->symbolTableEntry()->setType(std::move(type));
+    table->addEntry(node->symbolTableEntry());
 }
 
 void TypeCheckerVisitor::visit(ast::sign* node)
 {
     Visitor::visit(node);
 
+    // TODO: sign can only be used on numerics
+
     // bubble up child type
     std::unique_ptr<VariableType> type(new VariableType(*node->child()->type()));
-    node->setType(std::move(type));
+    node->setType(std::unique_ptr<VariableType>(new VariableType(*type)));
+
+    auto table = node->closestSymbolTable();
+    node->symbolTableEntry() = std::make_shared<SymbolTableEntry>();
+    node->symbolTableEntry()->setName(nextTempVar());
+    node->symbolTableEntry()->setKind(SymbolTableEntryKind::TEMPVAR);
+    node->symbolTableEntry()->setType(std::move(type));
+    table->addEntry(node->symbolTableEntry());
 }
 
 void TypeCheckerVisitor::visit(ast::funcDef* node)

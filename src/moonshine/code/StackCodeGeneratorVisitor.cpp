@@ -149,7 +149,7 @@ void StackCodeGeneratorVisitor::visit(ast::addOp* node)
             sub(r3, r1, r2);
             break;
         case TokenType::T_OR:
-            // TODO
+            orOp(r3, r1, r2);
             break;
         default:
             break;
@@ -194,7 +194,7 @@ void StackCodeGeneratorVisitor::visit(ast::multOp* node)
             div(r3, r1, r2);
             break;
         case TokenType::T_AND:
-            // TODO
+            andOp(r3, r1, r2);
             break;
         default:
             break;
@@ -262,11 +262,35 @@ void StackCodeGeneratorVisitor::visit(ast::relOp* node)
     regPush(r1);
 }
 
+void StackCodeGeneratorVisitor::visit(ast::notFactor* node)
+{
+    Visitor::visit(node);
+
+    text() << "% notFactor: " << node->symbolTableEntry()->name() << " := not " << node->child()->symbolTableEntry()->name() << endl;
+
+    auto r1 = reg();
+    auto r2 = reg();
+
+    // load data
+    lw(r1, -node->child()->symbolTableEntry()->offset(), SP);
+    if (dynamic_cast<ast::var*>(node->child())) {
+        // indirect
+        lw(r1, 0, r1);
+    }
+
+    notOp(r2, r1);
+
+    sw(-node->symbolTableEntry()->offset(), SP, r2);
+
+    regPush(r2);
+    regPush(r1);
+}
+
 void StackCodeGeneratorVisitor::visit(ast::assignStat* node)
 {
     Visitor::visit(node);
 
-    text() << "% assignStat: " << node->child(0)->symbolTableEntry()->name() << " := " <<  node->child(1)->symbolTableEntry()->name() << endl;
+    text() << "% assignStat: " << node->child(0)->symbolTableEntry()->name() << " := " << node->child(1)->symbolTableEntry()->name() << endl;
 
     auto r1 = reg();
     auto r2 = reg();
@@ -321,6 +345,39 @@ void StackCodeGeneratorVisitor::visit(ast::putStat* node)
 
     // make the stack frame pointer point back to the current function's stack frame
     subi(SP, SP, -table->size());
+
+    regPush(r1);
+}
+
+void StackCodeGeneratorVisitor::visit(ast::getStat* node)
+{
+    Visitor::visit(node);
+
+    auto table = node->closestSymbolTable();
+
+    text() << "% getStat: " << node->child()->symbolTableEntry()->name() << endl;
+
+    auto r1 = reg();
+
+    // make the stack frame pointer point to the called function's stack frame
+    addi(SP, SP, -table->size());
+
+    // link buffer to stack
+    addi(r1, ZR, "buf");
+    sw(-8, SP, r1);
+
+    // call getstr (result stored in buffer)
+    jl(JL, "getstr");
+
+    // convert int to string for output (result stored in r13/RV)
+    jl(JL, "strint");
+
+    // make the stack frame pointer point back to the current function's stack frame
+    subi(SP, SP, -table->size());
+
+    // store into indirected offset
+    lw(r1, -node->child()->symbolTableEntry()->offset(), SP);
+    sw(0, r1, RV);
 
     regPush(r1);
 }
@@ -440,6 +497,11 @@ void StackCodeGeneratorVisitor::visit(ast::fCall* node)
         text() << "%% fparam begin: " << (*currentParam)->name() << endl;
 
         lw(r1, -aParam->symbolTableEntry()->offset(), SP);
+        if (dynamic_cast<ast::var*>(aParam)) {
+            // indirect
+            lw(r1, 0, r1);
+        }
+
         sw(-table->size() - (*currentParam)->offset(), SP, r1);
 
         text() << "% fparam end: " << (*currentParam)->name() << endl;
@@ -515,7 +577,7 @@ void StackCodeGeneratorVisitor::visit(ast::forStat* node)
 
     // initialization
     node->child(2)->accept(this);
-    text() << "% forStat: " << dynamic_cast<ast::id*>(node->child(1))->token()->value << " := " <<  node->child(2)->symbolTableEntry()->name() << endl;
+    text() << "% forStat: " << dynamic_cast<ast::id*>(node->child(1))->token()->value << " := " << node->child(2)->symbolTableEntry()->name() << endl;
     auto r1 = reg();
     lw(r1, -node->child(2)->symbolTableEntry()->offset(), SP);
     sw(-(*table)[dynamic_cast<ast::id*>(node->child(1))->token()->value]->offset(), SP, r1);
@@ -601,6 +663,21 @@ void StackCodeGeneratorVisitor::muli(const std::string& dest, const std::string&
 void StackCodeGeneratorVisitor::div(const std::string& dest, const std::string& source, const std::string& offset)
 {
     text() << "div " << dest << ',' << source << ',' << offset << endl;
+}
+
+void StackCodeGeneratorVisitor::andOp(const std::string& dest, const std::string& source, const std::string& offset)
+{
+    text() << "and " << dest << ',' << source << ',' << offset << endl;
+}
+
+void StackCodeGeneratorVisitor::orOp(const std::string& dest, const std::string& source, const std::string& offset)
+{
+    text() << "or " << dest << ',' << source << ',' << offset << endl;
+}
+
+void StackCodeGeneratorVisitor::notOp(const std::string& dest, const std::string& op)
+{
+    text() << "not " << dest << ',' << op << endl;
 }
 
 void StackCodeGeneratorVisitor::lw(const std::string& dest, const int& offset, const std::string& source)

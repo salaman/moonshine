@@ -28,8 +28,10 @@ public:
     void visit(ast::addOp* node) override;
     void visit(ast::multOp* node) override;
     void visit(ast::relOp* node) override;
+    void visit(ast::notFactor* node) override;
     void visit(ast::assignStat* node) override;
     void visit(ast::putStat* node) override;
+    void visit(ast::getStat* node) override;
     void visit(ast::returnStat* node) override;
     void visit(ast::funcDef* node) override;
     void visit(ast::dataMember* node) override;
@@ -71,6 +73,9 @@ private:
     void mul(const std::string& dest, const std::string& source, const std::string& offset);
     void muli(const std::string& dest, const std::string& source, const int& immediate);
     void div(const std::string& dest, const std::string& source, const std::string& offset);
+    void andOp(const std::string& dest, const std::string& source, const std::string& offset);
+    void orOp(const std::string& dest, const std::string& source, const std::string& offset);
+    void notOp(const std::string& dest, const std::string& op);
     void lw(const std::string& dest, const int& offset, const std::string& source);
     void sw(const int& offset, const std::string& dest, const std::string& source);
     void jl(const std::string& store, const std::string& jmp);
