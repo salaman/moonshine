@@ -469,7 +469,6 @@ void StackCodeGeneratorVisitor::visit(ast::dataMember* node)
 
     auto r1 = reg();
     auto r2 = reg();
-    auto r3 = reg();
 
     // in the var's tempvar, we store an address to the *top* of where the data is located for this dataMember,
     // which is its -offset plus its size
@@ -514,37 +513,36 @@ void StackCodeGeneratorVisitor::visit(ast::dataMember* node)
     // for indices, we calculate an offset amount to move down from the top of the data
     if (node->child(1)->child()) {
         int size = node->parent()->symbolTableEntry()->size();
+        auto type = dynamic_cast<semantic::VariableType*>(entry->type());
+        int i = 0;
 
-        // start the offset at zero
-        addi(r2, ZR, 0);
-        for (auto index = node->child(1)->child(); index != nullptr; index = index->next()) {
+        for (auto index = node->child(1)->child(); index != nullptr; index = index->next(), ++i) {
             text() << "% dataMember: index " << index->symbolTableEntry()->name() << endl;
 
             // for every index, we load the int index value from the indice's tempvar
-            lw(r3, -index->symbolTableEntry()->offset(), SP);
+            lw(r2, -index->symbolTableEntry()->offset(), SP);
             if (dynamic_cast<ast::var*>(index)) {
                 // indirect
-                lw(r3, 0, r3);
+                lw(r2, 0, r2);
             }
 
-            // we multiply the offset we already have by the size of each cell
+            // we multiply the offset by the total column size for this index,
+            // which is all dimensions after it multiplied
+            for (int j = i + 1; j < type->indices.size(); ++j) {
+                muli(r2, r2, type->indices[j]);
+            }
+
+            // finally, we mulitply the whole offset by the cell size
             muli(r2, r2, size);
 
-            // and we add the index value to the running offset
-            add(r2, r2, r3);
+            // and adjust the var offset accordingly by moving it down to the correct position,
+            // where it now points at the top of the data cell
+            sub(r1, r1, r2);
         }
-
-        // finally, we mulitply the whole offset by the cell size
-        muli(r2, r2, size);
-
-        // and adjust the var offset accordingly by moving it down to the correct position,
-        // where it now points at the top of the data cell
-        sub(r1, r1, r2);
     }
 
     sw(-node->parent()->symbolTableEntry()->offset(), SP, r1);
 
-    regPush(r3);
     regPush(r2);
     regPush(r1);
 }
