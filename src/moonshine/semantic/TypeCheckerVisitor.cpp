@@ -11,28 +11,6 @@
 
 namespace moonshine { namespace semantic {
 
-void TypeCheckerVisitor::visit(ast::prog* node)
-{
-    Visitor::visit(node);
-
-    // check that all member functions have been defined
-    // TODO: move to funcDecl
-    for (auto it = node->symbolTable()->begin(); it != node->symbolTable()->end(); ++it) {
-        // find classes in global table
-        if (it->second->kind() == SymbolTableEntryKind::CLASS) {
-            auto classTable = it->second->link();
-
-            // find functions in class table
-            for (auto entry = classTable->begin(); entry != classTable->end(); ++entry) {
-                // ensure the function has a symbol table link
-                if (entry->second->kind() == SymbolTableEntryKind::FUNCTION && !entry->second->link()) {
-                    errors_->emplace_back(SemanticErrorType::UNDEFINED_FUNCTION, nullptr); // TODO
-                }
-            }
-        }
-    }
-}
-
 void TypeCheckerVisitor::visit(ast::assignStat* node)
 {
     Visitor::visit(node);
@@ -236,6 +214,22 @@ void TypeCheckerVisitor::visit(ast::sign* node)
     node->symbolTableEntry()->setKind(SymbolTableEntryKind::TEMPVAR);
     node->symbolTableEntry()->setType(std::move(type));
     table->addEntry(node->symbolTableEntry());
+}
+
+void TypeCheckerVisitor::visit(ast::funcDecl* node)
+{
+    Visitor::visit(node);
+
+    auto entry = node->symbolTableEntry();
+
+    if (!entry) {
+        return;
+    }
+
+    // check that all member functions have been defined
+    if (entry->kind() == SymbolTableEntryKind::FUNCTION && !entry->link()) {
+        errors_->emplace_back(SemanticErrorType::UNDEFINED_FUNCTION, dynamic_cast<ast::id*>(node->child(1))->token());
+    }
 }
 
 void TypeCheckerVisitor::visit(ast::funcDef* node)
