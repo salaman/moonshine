@@ -80,7 +80,16 @@ void StackCodeGeneratorVisitor::visit(ast::sign* node)
     auto r1 = reg();
 
     lw(r1, -node->child()->symbolTableEntry()->offset(), SP);
-    muli(r1, r1, -1);
+
+    switch (node->token()->type) {
+        case TokenType::T_MINUS:
+            muli(r1, r1, -1);
+            break;
+        default:
+            // no-op
+            break;
+    }
+
     sw(-node->symbolTableEntry()->offset(), SP, r1);
 
     regPush(r1);
