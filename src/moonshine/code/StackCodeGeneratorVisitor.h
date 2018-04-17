@@ -24,6 +24,7 @@ public:
     void visit(ast::prog* node) override;
     void visit(ast::statBlock* node) override;
     void visit(ast::num* node) override;
+    void visit(ast::sign* node) override;
     void visit(ast::var* node) override;
     void visit(ast::addOp* node) override;
     void visit(ast::multOp* node) override;

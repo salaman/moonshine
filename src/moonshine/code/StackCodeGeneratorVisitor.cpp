@@ -68,6 +68,21 @@ void StackCodeGeneratorVisitor::visit(ast::num* node)
     regPush(r1);
 }
 
+void StackCodeGeneratorVisitor::visit(ast::sign* node)
+{
+    Visitor::visit(node);
+
+    text() << "% sign: " << node->symbolTableEntry()->name() << " := -" << node->child()->symbolTableEntry()->name() << endl;
+
+    auto r1 = reg();
+
+    lw(r1, -node->child()->symbolTableEntry()->offset(), SP);
+    muli(r1, r1, -1);
+    sw(-node->symbolTableEntry()->offset(), SP, r1);
+
+    regPush(r1);
+}
+
 void StackCodeGeneratorVisitor::visit(ast::var* node)
 {
     auto table = node->closestSymbolTable();
