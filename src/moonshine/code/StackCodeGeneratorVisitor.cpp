@@ -6,6 +6,7 @@
 
 #include <utility>
 #include <iomanip>
+#include <algorithm>
 
 namespace moonshine { namespace code {
 
@@ -441,8 +442,10 @@ void StackCodeGeneratorVisitor::visit(ast::dataMember* node)
 {
     Visitor::visit(node);
 
+    auto table = node->closestSymbolTable();
     auto idNode = dynamic_cast<ast::id*>(node->child(0));
     auto entry = node->symbolTableEntry();
+    auto previous = node->previous();
 
     text() << "% dataMember: " << idNode->token()->value << endl;
 
@@ -454,6 +457,41 @@ void StackCodeGeneratorVisitor::visit(ast::dataMember* node)
     // which is its -offset plus its size
     lw(r1, -node->parent()->symbolTableEntry()->offset(), SP);
     addi(r1, r1, -entry->offset() + entry->size());
+
+    // if the previous dataMember refers to a class, we need to check if we should adjust the offset for inheritance
+    if (previous && dynamic_cast<semantic::VariableType*>(previous->symbolTableEntry()->type())->type == semantic::Type::CLASS) {
+        auto classEntry = (*table)[dynamic_cast<semantic::VariableType*>(previous->symbolTableEntry()->type())->className];
+        auto link = classEntry->link();
+
+        // first, check if this dataMember's entry is in the class' own symbol table
+        // in this case, we do not need to adjust any offsets as all the vars live at the top of the stack frame
+        auto e = std::find_if(link->begin(), link->end(),
+                              [&entry](const std::pair<semantic::SymbolTableEntry::key_type, semantic::SymbolTable::entry_type>& e) {
+                                  return e.first == entry->name();
+                              });
+
+        if (e == link->end()) {
+            int lastSize = link->size();
+
+            // if it's not, we should iterate over all the supers and try to find where it is
+            for (const auto& super : classEntry->supers()) {
+                // every time we come across a super, we move the stack pointer offset down the previous table's size
+                addi(r1, r1, -lastSize);
+                lastSize = super->link()->size();
+
+                // now we check if our entry is in this super's table
+                auto e = std::find_if(super->link()->begin(), super->link()->end(),
+                                      [&entry](const std::pair<semantic::SymbolTableEntry::key_type, semantic::SymbolTable::entry_type>& e) {
+                                          return e.first == entry->name();
+                                      });
+
+                // if it is, we're done!
+                if (e != super->link()->end()) {
+                    break;
+                }
+            }
+        }
+    }
 
     // for indices, we calculate an offset amount to move down from the top of the data
     if (node->child(1)->child()) {

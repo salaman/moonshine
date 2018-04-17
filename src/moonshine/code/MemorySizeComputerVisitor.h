@@ -12,7 +12,6 @@ public:
     void visit(ast::prog* node) override;
     void visit(ast::varDecl* node) override;
     void visit(ast::fparam* node) override;
-    void visit(ast::classDecl* node) override;
     void visit(ast::classList* node) override;
     void visit(ast::funcDef* node) override;
     void visit(ast::forStat* node) override;

@@ -125,6 +125,19 @@ Node* Node::next() const
     return rightSib_.get();
 }
 
+Node* Node::previous() const
+{
+    Node* prevNode = nullptr;
+    Node* node = leftmostSib_;
+
+    while (node != this) {
+        prevNode = node;
+        node = node->rightSib_.get();
+    }
+
+    return prevNode;
+}
+
 void Node::print(std::ostream* s) const
 {
     *s << name();

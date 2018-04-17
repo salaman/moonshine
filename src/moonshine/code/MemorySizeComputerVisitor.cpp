@@ -86,6 +86,8 @@ void MemorySizeComputerVisitor::visit(ast::classList* node)
 
     auto table = node->closestSymbolTable();
 
+    // calculate sizes of class tables w/ class members
+
     std::map<std::string, int> sizes;
 
     while (true) {
@@ -143,20 +145,20 @@ void MemorySizeComputerVisitor::visit(ast::classList* node)
             break;
         }
     }
-}
 
-void MemorySizeComputerVisitor::visit(ast::classDecl* node)
-{
-    Visitor::visit(node);
+    // calculate sizes of class entries w/ inheritance
 
-    auto table = node->symbolTable();
+    for (auto it = table->begin(); it != table->end(); ++it) {
+        std::shared_ptr<SymbolTableEntry> classEntry = it->second;
 
-    //for (auto entry = table->begin(); entry != table->end(); ++entry) {
-    //    table->setSize(table->size() + entry->second->size());
-    //    entry->second->setOffset(table->size());
-    //}
+        if (classEntry->kind() != SymbolTableEntryKind::CLASS) {
+            continue;
+        }
 
-    //node->symbolTableEntry()->setSize(table->size());
+        for (const auto& super : classEntry->supers()) {
+            classEntry->setSize(classEntry->size() + super->size());
+        }
+    }
 }
 
 void MemorySizeComputerVisitor::visit(ast::funcDef* node)
@@ -181,7 +183,7 @@ void MemorySizeComputerVisitor::visit(ast::funcDef* node)
         entry->second->setOffset(table->size());
     }
 
-    node->symbolTableEntry()->setSize(table->size());
+    //node->symbolTableEntry()->setSize(table->size());
 }
 
 

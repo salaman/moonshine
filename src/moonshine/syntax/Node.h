@@ -29,6 +29,7 @@ public:
     Node* rightmostChild() const;
     unsigned int childCount() const;
     Node* next() const;
+    Node* previous() const;
     virtual bool isLeaf() const;
 
     virtual void accept(Visitor* visitor) = 0; // TODO: make const param
