@@ -514,7 +514,7 @@ void StackCodeGeneratorVisitor::visit(ast::dataMember* node)
     if (node->child(1)->child()) {
         int size = node->parent()->symbolTableEntry()->size();
         auto type = dynamic_cast<semantic::VariableType*>(entry->type());
-        int i = 0;
+        std::vector<unsigned int>::size_type i = 0;
 
         for (auto index = node->child(1)->child(); index != nullptr; index = index->next(), ++i) {
             text() << "% dataMember: index " << index->symbolTableEntry()->name() << endl;
@@ -528,7 +528,7 @@ void StackCodeGeneratorVisitor::visit(ast::dataMember* node)
 
             // we multiply the offset by the total column size for this index,
             // which is all dimensions after it multiplied
-            for (int j = i + 1; j < type->indices.size(); ++j) {
+            for (auto j = i + 1; j < type->indices.size(); ++j) {
                 muli(r2, r2, type->indices[j]);
             }
 

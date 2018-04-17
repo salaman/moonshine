@@ -401,20 +401,31 @@ void TypeCheckerVisitor::visit(ast::fCall* node)
 
             // find the var's type after this fCall is applied
             if (auto t = dynamic_cast<FunctionType*>(entry->type())) {
-                // if we find it, set our type to the function's return type
-                std::unique_ptr<VariableType> type(new VariableType(t->returnType));
-                node->setType(std::unique_ptr<VariableType>(new VariableType(*type)));
-                varNode->setType(std::move(type));
 
-                // hack: make aParams hold a tempvar for the result of this function call
-                node->child(1)->symbolTableEntry() = std::make_shared<SymbolTableEntry>();
-                node->child(1)->symbolTableEntry()->setName(nextTempVar());
-                node->child(1)->symbolTableEntry()->setKind(SymbolTableEntryKind::TEMPVAR);
-                node->child(1)->symbolTableEntry()->setType(std::unique_ptr<VariableType>(new VariableType(*node->type())));
-                table->addEntry(node->child(1)->symbolTableEntry());
+                // check that the parameters used match the function declaration
+                if (paramType == t->parameterTypes) {
+                    // set our type to the function's return type
+                    std::unique_ptr<VariableType> type(new VariableType(t->returnType));
+                    node->setType(std::unique_ptr<VariableType>(new VariableType(*type)));
+                    varNode->setType(std::move(type));
 
-                // for code generation, set the dataMember's entry to where the data resides
-                node->symbolTableEntry() = entry;
+                    // hack: make aParams hold a tempvar for the result of this function call
+                    node->child(1)->symbolTableEntry() = std::make_shared<SymbolTableEntry>();
+                    node->child(1)->symbolTableEntry()->setName(nextTempVar());
+                    node->child(1)->symbolTableEntry()->setKind(SymbolTableEntryKind::TEMPVAR);
+                    node->child(1)->symbolTableEntry()->setType(std::unique_ptr<VariableType>(new VariableType(*node->type())));
+                    table->addEntry(node->child(1)->symbolTableEntry());
+
+                    // for code generation, set the dataMember's entry to where the data resides
+                    node->symbolTableEntry() = entry;
+                } else {
+                    // there is a parameter mismatch
+                    std::unique_ptr<VariableType> type(new VariableType());
+                    type->type = Type::ERROR;
+                    varNode->setType(std::move(type));
+                    errors_->emplace_back(SemanticErrorType::INCORRECT_TYPE_IN_FUNCTION_CALL, idNode->token());
+                }
+
             } else {
                 // the symbol exists, but is not a function
                 std::unique_ptr<VariableType> type(new VariableType());
