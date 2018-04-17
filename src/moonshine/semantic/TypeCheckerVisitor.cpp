@@ -255,8 +255,8 @@ void TypeCheckerVisitor::visit(ast::funcDef* node)
     // create an entry for the this pointer
     auto table = node->symbolTable();
     auto thisVar = std::make_shared<SymbolTableEntry>();
-    thisVar->setName("this");
-    thisVar->setKind(SymbolTableEntryKind::TEMPVAR);
+    thisVar->setName("_this");
+    thisVar->setKind(SymbolTableEntryKind::THIS);
     std::unique_ptr<VariableType> thisType(new VariableType());
     thisType->type = Type::INT;
     thisVar->setType(std::move(thisType));
@@ -524,7 +524,7 @@ void TypeCheckerVisitor::aParamsToVariableTypes(std::vector<VariableType>& types
 
 std::string TypeCheckerVisitor::nextTempVar()
 {
-    return "t" + std::to_string(currentTempVar_++);
+    return "_t" + std::to_string(currentTempVar_++);
 }
 
 }}

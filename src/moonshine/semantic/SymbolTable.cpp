@@ -63,7 +63,9 @@ SymbolTable::entry_type SymbolTable::operator[](const SymbolTableEntry::key_type
     auto entry = entries_.find(name);
 
     // we found the entry in this table
-    if (entry != entries_.end()) {
+    if (entry != entries_.end()
+        && entry->second->kind() != SymbolTableEntryKind::BLOCK
+        && entry->second->kind() != SymbolTableEntryKind::TEMPVAR) {
         return entry->second;
     }
 
@@ -88,6 +90,10 @@ SymbolTable::entry_type SymbolTable::operator[](const SymbolTableEntry::key_type
 
 void SymbolTable::addEntry(const SymbolTable::entry_type& entry)
 {
+    if (entry->kind() == SymbolTableEntryKind::BLOCK) {
+        entry->setName(std::string("block") + std::to_string(forCount_++));
+    }
+
     entries_[entry->name()] = entry;
     entry->setParent(this);
 }
@@ -207,6 +213,9 @@ void SymbolTable::print(std::ostream& s, std::string pad) const
                 break;
             case SymbolTableEntryKind::LITERAL:
                 s << "literal";
+                break;
+            case SymbolTableEntryKind::THIS:
+                s << "this";
                 break;
         }
         s << "│";

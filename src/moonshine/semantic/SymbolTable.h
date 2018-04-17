@@ -18,7 +18,8 @@ enum class SymbolTableEntryKind
     PARAMETER,
     BLOCK,
     TEMPVAR,
-    LITERAL
+    LITERAL,
+    THIS
 };
 
 class SymbolTable;
@@ -93,7 +94,7 @@ private:
     // TODO: unordered_multimap?
     map_type entries_;
     weak_entry_type parent_ = nullptr;
-
+    int forCount_ = 0;
     int size_;
 };
 

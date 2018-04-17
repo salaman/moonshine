@@ -103,7 +103,7 @@ void StackCodeGeneratorVisitor::visit(ast::var* node)
             // inherited member from a class symbol table
             // initialize offset var to the top address of the dataMember's data
             text() << "% var: initial offset for member var" << endl;
-            auto thisVar = (*table)["this"];
+            auto thisVar = (*table)["_this"];
             lw(r1, -thisVar->offset(), SP);
             sw(-node->symbolTableEntry()->offset(), SP, r1);
         } else {
@@ -566,8 +566,10 @@ void StackCodeGeneratorVisitor::visit(ast::fCall* node)
     // make the stack frame pointer point to the called function's stack frame
     addi(SP, SP, -table->size());
 
-    auto thisVar = (*function->link())["this"];
-    sw(-thisVar->offset(), SP, r1);
+    // if this function has a this ptr, set it
+    if (auto thisVar = (*function->link())["_this"]) {
+        sw(-thisVar->offset(), SP, r1);
+    }
 
     // jump to the called function's code
     // here the function's name is the label
