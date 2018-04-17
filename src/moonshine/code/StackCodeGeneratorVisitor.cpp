@@ -15,6 +15,8 @@ using std::endl;
 StackCodeGeneratorVisitor::StackCodeGeneratorVisitor(std::ostream& dataStream, std::ostream& textStream)
     : dataStream_(dataStream), textStream_(textStream)
 {
+    indent_ = std::string(indentLength_, ' ');
+
     for (int i = 12; i >= 1; --i) {
         registers_.emplace("r" + std::to_string(i));
     }
@@ -420,10 +422,17 @@ void StackCodeGeneratorVisitor::visit(ast::returnStat* node)
 void StackCodeGeneratorVisitor::visit(ast::funcDef* node)
 {
     auto function = node->symbolTableEntry();
+    bool isFreeFunction = !function->parentTable()->parentEntry();
+    std::string prefix;
+
+    // for member functions, try to uniquely id them
+    if (!isFreeFunction) {
+        prefix += function->parentTable()->parentEntry()->name();
+    }
 
     // create the tag to jump onto
     // and copy the jumping-back address value in the called function's stack frame
-    text(node->symbolTableEntry()->name()) << "% funcDef: " << function->name() << endl;
+    text(prefix + function->name()) << "% funcDef: " << prefix << function->name() << endl;
     sw(-8, SP, JL);
 
     // generate the code for the function body
@@ -536,11 +545,16 @@ void StackCodeGeneratorVisitor::visit(ast::fCall* node)
     Visitor::visit(node);
 
     auto table = node->closestSymbolTable();
-    //auto idNode = dynamic_cast<ast::id*>(node->child(0));
-    //auto function = (*table)[idNode->token()->value];
     auto function = node->symbolTableEntry();
+    bool isFreeFunction = !function->parentTable()->parentEntry();
+    std::string prefix;
 
-    text() << "% fCall: " << function->name() << endl;
+    // for member functions, try to uniquely id them
+    if (!isFreeFunction) {
+        prefix += function->parentTable()->parentEntry()->name();
+    }
+
+    text() << "% fCall: " << prefix << function->name() << endl;
 
     auto r1 = reg();
 
@@ -574,7 +588,7 @@ void StackCodeGeneratorVisitor::visit(ast::fCall* node)
     // jump to the called function's code
     // here the function's name is the label
     // TODO: unique names? should we use label() for function names? perhaps create in funcDef and store in entry
-    jl(JL, function->name());
+    jl(JL, prefix + function->name());
 
     // upon jumping back, set the stack frame pointer back to the current function's stack frame
     subi(SP, SP, -table->size());
@@ -598,20 +612,21 @@ void StackCodeGeneratorVisitor::visit(ast::ifStat* node)
     auto elseLabel = label("else");
     auto endifLabel = label("endif");
 
-    // condition
+    // condition: call visitor on 1st child node (expression)
     node->child(0)->accept(this);
 
+    // evaluate: if false, jump to else. if true, carry on
     auto r1 = reg();
     lw(r1, -node->child(0)->symbolTableEntry()->offset(), SP);
     bz(r1, elseLabel);
     regPush(r1);
 
-    // then
+    // then: call visitor on then statBlock
+    text() << "% ifStat: then" << endl;
     node->child(1)->accept(this);
+    j(endifLabel); // done, bail out to endif
 
-    j(endifLabel);
-
-    // else
+    // else: call visitor on else statBlock, tag it
     text(elseLabel) << "% ifStat: else" << endl;
     node->child(2)->accept(this);
 
@@ -808,7 +823,7 @@ std::ostream& StackCodeGeneratorVisitor::data()
 
 std::ostream& StackCodeGeneratorVisitor::data(const std::string& label)
 {
-    return dataStream_ << std::setw(10) << std::left << label;
+    return dataStream_ << std::left << std::setw(indentLength_) << (' ' + label);
 }
 
 std::ostream& StackCodeGeneratorVisitor::text()
@@ -818,7 +833,7 @@ std::ostream& StackCodeGeneratorVisitor::text()
 
 std::ostream& StackCodeGeneratorVisitor::text(const std::string& label)
 {
-    return textStream_ << std::left << std::setw(10) << label;
+    return textStream_ << std::left << std::setw(indentLength_) << (' ' + label);
 }
 
 std::string StackCodeGeneratorVisitor::label(const std::string& label)

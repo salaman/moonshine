@@ -504,10 +504,6 @@ void TypeCheckerVisitor::visit(ast::var* node)
     table->addEntry(node->symbolTableEntry());
 
     // TODO: merge this into TypeCheckerVisitor::visit(dataMember)?
-
-
-
-    //node->symbolTableEntry() = (*table)[dynamic_cast<ast::id*>(node->child(0)->child(0))->token()->value];
 }
 
 void TypeCheckerVisitor::aParamsToVariableTypes(std::vector<VariableType>& types, const ast::aParams* node) const

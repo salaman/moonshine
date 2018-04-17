@@ -45,8 +45,8 @@ private:
     const std::string SP = "r14";
     const std::string JL = "r15";
 
-    const std::string indent_ = "          ";
-
+    int indentLength_ = 15;
+    std::string indent_;
     std::ostream& dataStream_;
     std::ostream& textStream_;
 
