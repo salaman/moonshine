@@ -65,17 +65,17 @@ private:
     std::string label(const std::string& label);
 
     // instructions
-    void add(const std::string& dest, const std::string& source, const std::string& offset);
-    void addi(const std::string& dest, const std::string& source, const std::string& immediate);
-    void addi(const std::string& dest, const std::string& source, const int& immediate);
-    void sub(const std::string& dest, const std::string& source, const std::string& offset);
-    void subi(const std::string& dest, const std::string& source, const std::string& immediate);
-    void subi(const std::string& dest, const std::string& source, const int& immediate);
-    void mul(const std::string& dest, const std::string& source, const std::string& offset);
-    void muli(const std::string& dest, const std::string& source, const int& immediate);
-    void div(const std::string& dest, const std::string& source, const std::string& offset);
-    void andOp(const std::string& dest, const std::string& source, const std::string& offset);
-    void orOp(const std::string& dest, const std::string& source, const std::string& offset);
+    void add(const std::string& dest, const std::string& op1, const std::string& op2);
+    void addi(const std::string& dest, const std::string& op1, const std::string& op2);
+    void addi(const std::string& dest, const std::string& op1, const int& op2);
+    void sub(const std::string& dest, const std::string& op1, const std::string& op2);
+    void subi(const std::string& dest, const std::string& op1, const std::string& op2);
+    void subi(const std::string& dest, const std::string& op1, const int& op2);
+    void mul(const std::string& dest, const std::string& op1, const std::string& op2);
+    void muli(const std::string& dest, const std::string& op1, const int& op2);
+    void div(const std::string& dest, const std::string& op1, const std::string& op2);
+    void andOp(const std::string& dest, const std::string& op1, const std::string& op2);
+    void orOp(const std::string& dest, const std::string& op1, const std::string& op2);
     void notOp(const std::string& dest, const std::string& op);
     void lw(const std::string& dest, const int& offset, const std::string& source);
     void sw(const int& offset, const std::string& dest, const std::string& source);

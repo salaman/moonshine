@@ -28,6 +28,7 @@ void StackCodeGeneratorVisitor::visit(ast::prog* node)
 
     data() << "% buffer space used for console output" << endl;
     data("buf") << "res 20" << endl;
+    data("cr") << "db 13,10,0" << endl;
 }
 
 void StackCodeGeneratorVisitor::visit(ast::statBlock* node)
@@ -171,7 +172,7 @@ void StackCodeGeneratorVisitor::visit(ast::var* node)
         regPush(r1);
     }
 
-    text() << "% var end" << endl;
+    text() << "% var end: " << node->symbolTableEntry()->name() << endl;
 }
 
 void StackCodeGeneratorVisitor::visit(ast::addOp* node)
@@ -397,6 +398,10 @@ void StackCodeGeneratorVisitor::visit(ast::putStat* node)
 
     // receive the return value in r13 and right away put it in the next called function's stack frame
     sw(-8, SP, RV);
+    jl(JL, "putstr");
+
+    addi(r1, ZR, "cr");
+    sw(-8, SP, r1);
     jl(JL, "putstr");
 
     // make the stack frame pointer point back to the current function's stack frame
@@ -726,59 +731,59 @@ void StackCodeGeneratorVisitor::regPush(const std::string& reg)
     registers_.emplace(reg);
 }
 
-void StackCodeGeneratorVisitor::add(const std::string& dest, const std::string& source, const std::string& offset)
+void StackCodeGeneratorVisitor::add(const std::string& dest, const std::string& op1, const std::string& op2)
 {
-    text() << "add " << dest << ',' << source << ',' << offset << endl;
+    text() << "add " << dest << ',' << op1 << ',' << op2 << endl;
 }
 
-void StackCodeGeneratorVisitor::addi(const std::string& dest, const std::string& source, const std::string& immediate)
+void StackCodeGeneratorVisitor::addi(const std::string& dest, const std::string& op1, const std::string& op2)
 {
-    text() << "addi " << dest << ',' << source << ',' << immediate << endl;
+    text() << "addi " << dest << ',' << op1 << ',' << op2 << endl;
 }
 
-void StackCodeGeneratorVisitor::addi(const std::string& dest, const std::string& source, const int& immediate)
+void StackCodeGeneratorVisitor::addi(const std::string& dest, const std::string& op1, const int& op2)
 {
-    addi(dest, source, std::to_string(immediate));
+    addi(dest, op1, std::to_string(op2));
 }
 
-void StackCodeGeneratorVisitor::sub(const std::string& dest, const std::string& source, const std::string& offset)
+void StackCodeGeneratorVisitor::sub(const std::string& dest, const std::string& op1, const std::string& op2)
 {
-    text() << "sub " << dest << ',' << source << ',' << offset << endl;
+    text() << "sub " << dest << ',' << op1 << ',' << op2 << endl;
 }
 
-void StackCodeGeneratorVisitor::subi(const std::string& dest, const std::string& source, const std::string& immediate)
+void StackCodeGeneratorVisitor::subi(const std::string& dest, const std::string& op1, const std::string& op2)
 {
-    text() << "subi " << dest << ',' << source << ',' << immediate << endl;
+    text() << "subi " << dest << ',' << op1 << ',' << op2 << endl;
 }
 
-void StackCodeGeneratorVisitor::subi(const std::string& dest, const std::string& source, const int& immediate)
+void StackCodeGeneratorVisitor::subi(const std::string& dest, const std::string& op1, const int& op2)
 {
-    subi(dest, source, std::to_string(immediate));
+    subi(dest, op1, std::to_string(op2));
 }
 
-void StackCodeGeneratorVisitor::mul(const std::string& dest, const std::string& source, const std::string& offset)
+void StackCodeGeneratorVisitor::mul(const std::string& dest, const std::string& op1, const std::string& op2)
 {
-    text() << "mul " << dest << ',' << source << ',' << offset << endl;
+    text() << "mul " << dest << ',' << op1 << ',' << op2 << endl;
 }
 
-void StackCodeGeneratorVisitor::muli(const std::string& dest, const std::string& source, const int& immediate)
+void StackCodeGeneratorVisitor::muli(const std::string& dest, const std::string& op1, const int& op2)
 {
-    text() << "muli " << dest << ',' << source << ',' << immediate << endl;
+    text() << "muli " << dest << ',' << op1 << ',' << op2 << endl;
 }
 
-void StackCodeGeneratorVisitor::div(const std::string& dest, const std::string& source, const std::string& offset)
+void StackCodeGeneratorVisitor::div(const std::string& dest, const std::string& op1, const std::string& op2)
 {
-    text() << "div " << dest << ',' << source << ',' << offset << endl;
+    text() << "div " << dest << ',' << op1 << ',' << op2 << endl;
 }
 
-void StackCodeGeneratorVisitor::andOp(const std::string& dest, const std::string& source, const std::string& offset)
+void StackCodeGeneratorVisitor::andOp(const std::string& dest, const std::string& op1, const std::string& op2)
 {
-    text() << "and " << dest << ',' << source << ',' << offset << endl;
+    text() << "and " << dest << ',' << op1 << ',' << op2 << endl;
 }
 
-void StackCodeGeneratorVisitor::orOp(const std::string& dest, const std::string& source, const std::string& offset)
+void StackCodeGeneratorVisitor::orOp(const std::string& dest, const std::string& op1, const std::string& op2)
 {
-    text() << "or " << dest << ',' << source << ',' << offset << endl;
+    text() << "or " << dest << ',' << op1 << ',' << op2 << endl;
 }
 
 void StackCodeGeneratorVisitor::notOp(const std::string& dest, const std::string& op)
