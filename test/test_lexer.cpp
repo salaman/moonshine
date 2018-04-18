@@ -31,7 +31,7 @@
     TEST_CASE((EXPR), "[lexer]") { \
         Lexer lex; \
         std::istringstream stream((EXPR)); \
-        lex.startLexing(&stream); \
+        lex.startLexing(&stream, nullptr); \
         Token* token = lex.getNextToken(); \
         REQS \
         REQUIRE_EOF(); \

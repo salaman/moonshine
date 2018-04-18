@@ -14,7 +14,7 @@ TEST_CASE(INPUT, "[syntax]") { \
     syntax::Grammar grammar("grammar.txt",  "table.json", "first.txt", "follow.txt"); \
     \
     std::istringstream stream((INPUT)); \
-    lex.startLexing(&stream); \
+    lex.startLexing(&stream, nullptr); \
     syntax::Parser parser(grammar); \
     \
     std::unique_ptr<ast::Node> astRoot; \
@@ -40,7 +40,7 @@ TEST_AST(
 
 TEST_AST(
     "program { ident a; };",
-    "prog{classList funcDefList statBlock{varDecl{id(ident) id(a) dimList}}}")
+    "prog{classList funcDefList statBlock{varDecl{type(ident) id(a) dimList}}}")
 
 TEST_AST(
     "program { int a[1]; };",
@@ -52,7 +52,7 @@ TEST_AST(
 
 TEST_AST(
     "program { id a[1][2][3]; };",
-    "prog{classList funcDefList statBlock{varDecl{id(id) id(a) dimList{num(1) num(2) num(3)}}}}")
+    "prog{classList funcDefList statBlock{varDecl{type(id) id(a) dimList{num(1) num(2) num(3)}}}}")
 
 TEST_AST(
     "program { a = 1; };",
@@ -108,7 +108,7 @@ TEST_AST(
 
 TEST_AST(
     "program { id idx[1][3]; };",
-    "prog{classList funcDefList statBlock{varDecl{id(id) id(idx) dimList{num(1) num(3)}}}}")
+    "prog{classList funcDefList statBlock{varDecl{type(id) id(idx) dimList{num(1) num(3)}}}}")
 
 TEST_AST(
     "program { float idx[1][2][3]; };",

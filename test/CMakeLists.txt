@@ -9,6 +9,7 @@ set(TEST_SOURCES
         main.cpp
         test_lexer.cpp
         test_syntax.cpp
+        test_semantic.cpp
         )
 
 add_executable(${TARGET} ${TEST_SOURCES})

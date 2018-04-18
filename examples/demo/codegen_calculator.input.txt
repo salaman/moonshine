@@ -1,0 +1,143 @@
+/*
+ * Enter ints one by one, separated by newlines.
+ * Enter 0 to finish input.
+ * Then, enter your operation type:
+ *   0: factorial
+ *   1: addition
+ *   2: subtraction
+ *   3: multiplication
+ *   4: division
+ */
+
+/*
+ * class declarations
+ */
+
+class Calculator : Operations {
+    Storage storage;
+    int inputs;
+
+    int init();
+    int run(int quit);
+    int perform(int operation);
+};
+
+class Storage {
+    int inputs[100];
+    int size;
+};
+
+class Operations {
+    int add(int a, int b);
+    int sub(int a, int b);
+    int mul(int a, int b);
+    int div(int a, int b);
+};
+
+/*
+ * function definitions
+ */
+
+int Operations::add(int a, int b) {
+    return (a + b);
+};
+
+int Operations::sub(int a, int b) {
+    return (a - b);
+};
+
+int Operations::mul(int a, int b) {
+    return (a * b);
+};
+
+int Operations::div(int a, int b) {
+    return (a / b);
+};
+
+int Calculator::init() {
+    storage.size = 100;
+    inputs = 0;
+    return (1);
+};
+
+int Calculator::run(int quit) {
+    int temp;
+    int stopped;
+
+    temp = init();
+    stopped = 0;
+
+    for (int i = 0; i < storage.size; i = i + 1) {
+        if (not stopped) then {
+            get(temp);
+
+            if (temp <> quit) then {
+                storage.inputs[i] = temp;
+            } else {
+                stopped = 1;
+                inputs = i;
+            };
+        } else;
+    };
+
+    // get operation
+    get(temp);
+
+    temp = perform(temp);
+
+    return (temp);
+};
+
+int Calculator::perform(int operation) {
+    int accumulator;
+
+    accumulator = storage.inputs[0];
+
+    if (operation == 0) then {
+        accumulator = factorial(storage.inputs[0]);
+    } else {
+        for (int i = 1; i < inputs; i = i + 1) {
+            if (operation == 1) then {
+                accumulator = add(accumulator, storage.inputs[i]);
+            } else {
+                if (operation == 2) then {
+                    accumulator = sub(accumulator, storage.inputs[i]);
+                } else {
+                    if (operation == 3) then {
+                        accumulator = mul(accumulator, storage.inputs[i]);
+                    } else {
+                        if (operation == 4) then {
+                            accumulator = div(accumulator, storage.inputs[i]);
+                        } else;
+                    };
+                };
+            };
+        };
+    };
+
+    return (accumulator);
+};
+
+int factorial(int num) {
+    if (num == 0) then {
+        return (1);
+    } else {
+        return (num * factorial(num - 1));
+    };
+};
+
+/*
+ * program
+ */
+
+program {
+    Calculator calc;
+    int result;
+    int quit;
+
+    // this is the number the user should enter to end input
+    quit = 0;
+
+    result = calc.run(quit);
+    put(result);
+};

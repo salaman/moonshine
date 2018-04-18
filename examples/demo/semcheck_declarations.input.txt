@@ -1,0 +1,38 @@
+class A {
+    int x;
+    int x; // redeclared
+    B b;
+
+    B funcA(int i, float f);
+    int funcX(int i[2][5][6]);
+};
+
+class B {
+    int funcB(int a[2][3]); // undefined func
+};
+
+B A::funcA(int i, float f) {
+    B localB;
+    return (i); // incompatible return
+};
+
+int A::funcX(int i[2][5][7]) { // incorrect type
+    return (0);
+};
+
+int freeFunction(A a, int i) {
+    // missing return
+};
+
+int freeFunction() { // redefined
+    int x;
+    return (x);
+};
+
+program {
+    A a;
+    B b;
+    C c;
+
+    int a; // redeclared
+};

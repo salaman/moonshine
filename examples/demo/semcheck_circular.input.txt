@@ -1,0 +1,29 @@
+class A : B, D, B { // dupe super, circular inheritance
+    int x;
+    A b; // circular member
+};
+
+// note the forward reference!
+
+class B : C {
+    int x; // shadowed
+    int y;
+};
+
+class C : A { // circular inheritance
+    int x;
+    int i;
+    int ii;
+    int iii;
+};
+
+class D : E, func { // undeclared class, invalid class
+    int a;
+    D d; // circular member
+    C c;
+    C cc;
+};
+
+int func() {};
+
+program {};

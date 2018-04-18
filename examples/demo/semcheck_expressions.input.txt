@@ -1,0 +1,76 @@
+/*
+ * class declarations
+ */
+
+class A : B {
+    int x;
+    B b;
+    B barr[3];
+
+    B funcA(int i, float f);
+};
+
+class B {
+    int arr[2][3][4];
+    float funcB(int num);
+};
+
+/*
+ * function definitions
+ */
+
+B A::funcA(int i, float f) {
+    B localB;
+    return (localB);
+};
+
+float B::funcB(int num) {
+    B localB;
+    return (localB); // invalid return type
+};
+
+int freeFunction(A a, int i, float j) {
+    return (50);
+};
+
+/*
+ * program
+ */
+
+program {
+    A a;
+    int i;
+    float f;
+    int arr[2][3];
+
+    // incorrect function call parameters
+    i = freeFunction(a, i, i + 2*3);
+    f = a.funcB(f);
+
+    // assignment type mismatch
+    a.b = freeFunction(a, i, f);
+    a.arr[1][1][2] = a.funcB(i);
+
+    // undeclared function
+    i = nope();
+    i = a.stillnope();
+
+    // undeclared variable
+    i = nope;
+    i = a.fake.stillnope;
+
+    // incorrect subscript type
+    i = arr[2][1.0 + f / 3.0];
+
+    // incorrect dimension count
+    i = arr[2][i][3];
+
+    // invalid variable
+    i = i.fail;
+    i = a.b.funcB(1).bad;
+
+    // some OK examples
+    a.b.arr[i + 1][2][1] = a.barr[1].arr[0][1][i + 1];
+    a.b = a.funcA(i, f);
+    a.x = a.funcA(i, f).arr[i][2][i + 1];
+};
