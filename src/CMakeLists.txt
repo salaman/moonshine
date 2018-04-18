@@ -11,7 +11,4 @@ elseif (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
 endif ()
 
 add_subdirectory(moonshine)
-add_subdirectory(a1_driver)
-add_subdirectory(a2_driver)
-add_subdirectory(a3_driver)
-add_subdirectory(a4_driver)
+add_subdirectory(driver)

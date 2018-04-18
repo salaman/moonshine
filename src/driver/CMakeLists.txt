@@ -1,5 +1,5 @@
 # target name
-set(TARGET a3_driver)
+set(TARGET driver)
 
 # enable C++11
 set(CMAKE_CXX_STANDARD 11)

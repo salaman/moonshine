@@ -97,9 +97,10 @@ Lexer::Lexer()
     dfa_ = std::unique_ptr<dfa::DFASimulator>(new dfa::DFASimulator(dfa));
 }
 
-void Lexer::startLexing(std::istream* stream)
+void Lexer::startLexing(std::istream* stream, std::ostream* output)
 {
     stream_ = stream;
+    output_ = output;
 
     dfa_->reset();
 
@@ -240,6 +241,14 @@ Token* Lexer::getNextToken()
     // hence we reached eof without parsing a valid token
     if (!value.empty()) {
         errors_.emplace_back(ParseErrorType::E_INVALID_CHARACTERS, value, errorStart);
+    }
+
+    if (token && output_) {
+        if (atocc) {
+            *output_ << token->name() << ' ';
+        } else {
+            *output_ << token->name() << " \"" << token->value << "\" " << token->position << std::endl;
+        }
     }
 
     return token;
