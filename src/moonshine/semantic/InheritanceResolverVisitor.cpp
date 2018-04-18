@@ -18,6 +18,10 @@ void InheritanceResolverVisitor::visit(ast::classList* node)
 
     auto table = node->closestSymbolTable();
 
+    /*
+     * check for circular inheritance
+     */
+
     for (auto it = table->begin(); it != table->end(); ++it) {
         std::shared_ptr<SymbolTableEntry> classEntry = it->second;
 
@@ -78,17 +82,86 @@ void InheritanceResolverVisitor::visit(ast::classList* node)
             }
         }
     }
+
+    /*
+     * check for circular members
+     */
+
+    for (auto it = table->begin(); it != table->end(); ++it) {
+        std::shared_ptr<SymbolTableEntry> classEntry = it->second;
+
+        if (classEntry->kind() != SymbolTableEntryKind::CLASS) {
+            continue;
+        }
+
+        for (const auto& entry : *classEntry->link()) {
+            auto type = dynamic_cast<VariableType*>(entry.second->type());
+
+            if (entry.second->kind() != SymbolTableEntryKind::VARIABLE || type->type != Type::CLASS) {
+                continue;
+            }
+
+            //std::cout << ">> " << type->className << std::endl;
+
+            std::vector<std::string> members;
+            members.emplace_back(type->className);
+
+            for (std::vector<std::string>::size_type i = 0; i < members.size(); ++i) {
+                auto currentMember = members[i];
+
+                for (const auto& e : *(*table)[currentMember]->link()) {
+                    auto memberType = dynamic_cast<VariableType*>(e.second->type());
+
+                    if (e.second->kind() != SymbolTableEntryKind::VARIABLE || memberType->type != Type::CLASS) {
+                        continue;
+                    }
+
+                    auto member = memberType->className;
+                    //std::cout << ">>>> " << member << std::endl;
+
+                    if (member == classEntry->name()) {
+                        //std::cout << ">>>> *** CIRCULAR! " << member << std::endl;
+
+                        std::shared_ptr<Token> token;
+                        for (auto classDecl = node->child(); classDecl != nullptr; classDecl = classDecl->next()) {
+                            if (classDecl->symbolTableEntry()->name() == classEntry->name()) {
+                                for (auto varDecl = classDecl->child(2)->child(); varDecl != nullptr; varDecl = varDecl->next()) {
+                                    if (dynamic_cast<ast::id*>(varDecl->child(1))->token()->value == entry.first) {
+                                        token = dynamic_cast<ast::id*>(varDecl->child(1))->token();
+                                        break;
+                                    }
+                                }
+
+                                if (token) {
+                                    break;
+                                }
+                            }
+                        }
+                        errors_->emplace_back(SemanticErrorType::CIRCULAR_MEMBER, token);
+
+                        break;
+                    } else if (std::find(members.begin(), members.end(), member) == members.end()) {
+                        members.emplace_back(member);
+                    }
+                }
+            }
+        }
+    }
 }
 
 void InheritanceResolverVisitor::visit(ast::inherList* node)
 {
     Visitor::visit(node);
 
-    // find closest symbol table
-    auto table = node->closestSymbolTable();
-
     // find symbol table entry for this class
     auto classEntry = node->parent()->symbolTableEntry();
+
+    if (!classEntry) {
+        return;
+    }
+
+    // find closest symbol table
+    auto table = node->closestSymbolTable();
 
     // iterate over id nodes in inherList
     for (auto n = dynamic_cast<ast::id*>(node->child()); n != nullptr; n = dynamic_cast<ast::id*>(n->next())) {
@@ -118,93 +191,6 @@ void InheritanceResolverVisitor::visit(ast::inherList* node)
 
         // OK!
         classEntry->addSuper(entry);
-    }
-}
-
-void InheritanceResolverVisitor::visit(ast::membList* node)
-{
-    Visitor::visit(node);
-
-    // find closest symbol table
-    auto table = node->closestSymbolTable();
-
-    // iterate over varDecl nodes in membList
-    for (auto n = dynamic_cast<ast::varDecl*>(node->child()); n != nullptr; n = dynamic_cast<ast::varDecl*>(n->next())) {
-        auto entry = n->symbolTableEntry();
-
-        // ignore any varDecl nodes that aren't being used (multiply declared, etc.)
-        if (!entry || !entry->parentTable()) {
-            continue;
-        }
-
-        // iterate over every superclass' symbol table for this class
-        for (const auto& super : table->parentEntry()->supers()) {
-            // check if the symbol is also defined in the super's symbol table
-            if ((*super->link())[entry->name()]) {
-                errors_->emplace_back(SemanticErrorType::SHADOWED_VARIABLE, dynamic_cast<ast::id*>(n->child(1))->token(), SemanticErrorLevel::WARN);
-                n->marked = true;
-            }
-        }
-    }
-}
-
-void InheritanceResolverVisitor::visit(ast::classDecl* node)
-{
-    Visitor::visit(node);
-
-    // find closest symbol table
-    auto table = node->closestSymbolTable();
-    auto classEntry = node->symbolTableEntry();
-
-    if (!classEntry) {
-        return;
-    }
-
-    //std::cout << classEntry->name() << std::endl;
-
-    for (const auto& entry : *classEntry->link()) {
-        auto type = dynamic_cast<VariableType*>(entry.second->type());
-
-        if (entry.second->kind() != SymbolTableEntryKind::VARIABLE || type->type != Type::CLASS) {
-            continue;
-        }
-
-        //std::cout << ">> " << type->className << std::endl;
-
-        std::vector<std::string> members;
-        members.emplace_back(type->className);
-
-        for (std::vector<std::string>::size_type i = 0; i < members.size(); ++i) {
-            auto currentMember = members[i];
-
-            for (const auto& e : *(*table)[currentMember]->link()) {
-                auto memberType = dynamic_cast<VariableType*>(e.second->type());
-
-                if (e.second->kind() != SymbolTableEntryKind::VARIABLE || memberType->type != Type::CLASS) {
-                    continue;
-                }
-
-                auto member = memberType->className;
-                //std::cout << ">>>> " << member << std::endl;
-
-                if (member == classEntry->name()) {
-                    //std::cout << ">>>> *** CIRCULAR! " << member << std::endl;
-
-                    std::shared_ptr<Token> token;
-                    for (auto varDecl = node->child(2)->child(); varDecl != nullptr; varDecl = varDecl->next()) {
-                        if (dynamic_cast<ast::id*>(varDecl->child(1))->token()->value == entry.first) {
-                            token = dynamic_cast<ast::id*>(varDecl->child(1))->token();
-                            break;
-                        }
-                    }
-                    errors_->emplace_back(SemanticErrorType::CIRCULAR_MEMBER, token);
-
-                    break;
-                } else if (std::find(members.begin(), members.end(), member) == members.end()) {
-                    members.emplace_back(member);
-                }
-            }
-        }
     }
 }
 

@@ -11,6 +11,7 @@ class ShadowedSymbolCheckerVisitor : public Visitor
 public:
     void visit(ast::forStat* node) override;
     void visit(ast::varDecl* node) override;
+    void visit(ast::membList* node) override;
 };
 
 }}
