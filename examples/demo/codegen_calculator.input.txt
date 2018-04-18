@@ -18,7 +18,7 @@ class Calculator : Operations {
     int inputs;
 
     int init();
-    int run(int quit);
+    Result run(int quit);
     int perform(int operation);
 };
 
@@ -32,6 +32,10 @@ class Operations {
     int sub(int a, int b);
     int mul(int a, int b);
     int div(int a, int b);
+};
+
+class Result {
+    int value;
 };
 
 /*
@@ -60,7 +64,8 @@ int Calculator::init() {
     return (1);
 };
 
-int Calculator::run(int quit) {
+Result Calculator::run(int quit) {
+    Result result;
     int temp;
     int stopped;
 
@@ -83,9 +88,9 @@ int Calculator::run(int quit) {
     // get operation
     get(temp);
 
-    temp = perform(temp);
+    result.value = perform(temp);
 
-    return (temp);
+    return (result);
 };
 
 int Calculator::perform(int operation) {
@@ -119,11 +124,16 @@ int Calculator::perform(int operation) {
 };
 
 int factorial(int num) {
-    if (num == 0) then {
+    if (num == 0) then
         return (1);
-    } else {
+    else
         return (num * factorial(num - 1));
-    };
+    ;
+};
+
+int printResult(Result res) {
+    put(res.value);
+    return (1);
 };
 
 /*
@@ -132,12 +142,13 @@ int factorial(int num) {
 
 program {
     Calculator calc;
-    int result;
+    Result result;
     int quit;
+    int temp;
 
     // this is the number the user should enter to end input
     quit = 0;
 
     result = calc.run(quit);
-    put(result);
+    temp = printResult(result);
 };
