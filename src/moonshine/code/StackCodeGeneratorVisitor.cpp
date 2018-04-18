@@ -142,7 +142,7 @@ void StackCodeGeneratorVisitor::visit(ast::var* node)
         auto thisVar = currTable->get("_this");
         int offset = 0;
 
-        while (!thisVar && currTable->parentEntry()->parentTable()) {
+        while (!thisVar && currTable->parentEntry() && currTable->parentEntry()->parentTable()) {
             currTable = currTable->parentEntry()->parentTable();
             offset += currTable->size();
             thisVar = currTable->get("_this");
