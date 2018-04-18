@@ -114,8 +114,18 @@ void StackCodeGeneratorVisitor::visit(ast::var* node)
             // inherited member from a class symbol table
             // initialize offset var to the top address of the dataMember's data
             text() << "% var: initial offset for member var" << endl;
-            auto thisVar = (*table)["_this"];
-            lw(r1, -thisVar->offset(), SP);
+
+            auto currTable = table.get();
+            auto thisVar = currTable->get("_this");
+            int offset = 0;
+
+            while (!thisVar) {
+                currTable = currTable->parentEntry()->parentTable();
+                offset += currTable->size();
+                thisVar = currTable->get("_this");
+            }
+
+            lw(r1, -thisVar->offset() + offset, SP);
             sw(-node->symbolTableEntry()->offset(), SP, r1);
         } else {
             // a nested block (forStat)
@@ -123,6 +133,25 @@ void StackCodeGeneratorVisitor::visit(ast::var* node)
             addi(r1, SP, node->child()->symbolTableEntry()->parentTable()->size());
             sw(-node->symbolTableEntry()->offset(), SP, r1);
         }
+    } else {
+
+        // if the first child is a fCall, we should carry over our this ptr if we have one
+
+        auto currTable = table.get();
+        auto thisVar = currTable->get("_this");
+        int offset = 0;
+
+        while (!thisVar && currTable->parentEntry()->parentTable()) {
+            currTable = currTable->parentEntry()->parentTable();
+            offset += currTable->size();
+            thisVar = currTable->get("_this");
+        }
+
+        if (thisVar) {
+            lw(r1, -thisVar->offset() + offset, SP);
+            sw(-node->symbolTableEntry()->offset(), SP, r1);
+        }
+
     }
 
     regPush(r1);
