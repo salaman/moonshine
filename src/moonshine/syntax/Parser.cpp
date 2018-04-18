@@ -73,7 +73,7 @@ std::unique_ptr<ast::Node> Parser::parse(Lexer* lex, std::ostream* output)
 
             if (error) {
                 // stop processing semantic stack on error
-                continue;
+                //continue;
             }
 
             if (x.value == -1) {
@@ -140,7 +140,7 @@ std::unique_ptr<ast::Node> Parser::parse(Lexer* lex, std::ostream* output)
         printSemanticStack(output);
     }
 
-    if (error || stack_.size() != 1 || stack_.back().type != GrammarTokenType::END) {
+    if (/*error ||*/ stack_.size() != 1 || stack_.back().type != GrammarTokenType::END) {
         return nullptr;
     }
 
@@ -167,10 +167,70 @@ void Parser::skipErrors(Lexer* lex, std::shared_ptr<Token>& a, const bool& isPop
 
     if (isPopError) {
         stack_.pop_back();
+
+        while (stack_.back().type == GrammarTokenType::SEMANTIC) {
+            const GrammarToken x = stack_.back();
+            stack_.pop_back();
+
+            if (x.value == -1) {
+                // pop
+                semanticStack_.pop_back();
+            } else if (x.value == 0) {
+                // makeNode() - semantic action to create a leaf node
+                semanticStack_.emplace_back(ast::Node::makeNode(x.name, a));
+            } else if (x.parent == 0) {
+                // makeSiblings() - semantic action to join several AST nodes
+                std::vector<std::unique_ptr<ast::Node>> children;
+
+                for (int i = x.value; i > 1; --i) {
+                    if (semanticStack_.empty()) {
+                        throw std::runtime_error("Tried popping from empty semantic stack in makeSiblings");
+                    } else {
+                        children.push_back(std::move(semanticStack_.back()));
+                    }
+
+                    semanticStack_.pop_back();
+                }
+
+                for (auto i = children.rbegin(); i != children.rend(); ++i) {
+                    semanticStack_.back()->adoptChildren(std::move(*i));
+                }
+            } else if (x.parent < 0) {
+                std::vector<std::unique_ptr<ast::Node>> children;
+
+                auto it = semanticStack_.end();
+                for (int i = 0; i < x.value; ++i, --it);
+
+                semanticStack_.erase(it);
+            } else {
+                // makeFamily() - semantic action to create a new AST hierarchy
+                std::vector<std::unique_ptr<ast::Node>> children;
+                std::unique_ptr<ast::Node> parent;
+
+                for (int i = x.value; i > 0; --i) {
+                    if (semanticStack_.empty()) {
+                        throw std::runtime_error("Tried popping from empty semantic stack in makeFamily");
+                    } else if (i == x.parent) {
+                        parent = std::move(semanticStack_.back());
+                    } else {
+                        children.push_back(std::move(semanticStack_.back()));
+                    }
+
+                    semanticStack_.pop_back();
+                }
+
+                for (auto i = children.rbegin(); i != children.rend(); ++i) {
+                    parent->adoptChildren(std::move(*i));
+                }
+
+                semanticStack_.push_back(std::move(parent));
+            }
+        }
+
     } else {
         a.reset(lex->getNextToken());
 
-        while (a && !grammar_(stack_.back(), a->type).isError()) {
+        while (a && grammar_(stack_.back(), a->type).isError()) {
             a.reset(lex->getNextToken());
         }
     }
