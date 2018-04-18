@@ -165,9 +165,15 @@ void StackCodeGeneratorVisitor::visit(ast::var* node)
     if (dynamic_cast<ast::dataMember*>(node->rightmostChild())) {
         text() << "% var: adjust offset" << endl;
 
+        auto type = dynamic_cast<semantic::VariableType*>(node->rightmostChild()->symbolTableEntry()->type());
+        int size = node->rightmostChild()->symbolTableEntry()->size();
+        for (const auto& i : type->indices) {
+            size /= i;
+        }
+
         r1 = reg();
         lw(r1, -node->symbolTableEntry()->offset(), SP);
-        addi(r1, r1, -node->symbolTableEntry()->size());
+        addi(r1, r1, -size);
         sw(-node->symbolTableEntry()->offset(), SP, r1);
         regPush(r1);
     }
@@ -598,6 +604,7 @@ void StackCodeGeneratorVisitor::visit(ast::fCall* node)
     text() << "% fCall: " << prefix << function->name() << endl;
 
     auto r1 = reg();
+    auto r2 = reg();
 
     auto currentParam = function->parameters().begin();
 
@@ -607,10 +614,13 @@ void StackCodeGeneratorVisitor::visit(ast::fCall* node)
         lw(r1, -aParam->symbolTableEntry()->offset(), SP);
         if (dynamic_cast<ast::var*>(aParam)) {
             // indirect
-            lw(r1, 0, r1);
+            for (int i = 0; i < (*currentParam)->size(); i += 4) {
+                lw(r2, i, r1);
+                sw(-table->size() - (*currentParam)->offset() + i, SP, r2);
+            }
+        } else {
+            sw(-table->size() - (*currentParam)->offset(), SP, r1);
         }
-
-        sw(-table->size() - (*currentParam)->offset(), SP, r1);
 
         text() << "% fparam end: " << (*currentParam)->name() << endl;
         currentParam++;
@@ -643,6 +653,7 @@ void StackCodeGeneratorVisitor::visit(ast::fCall* node)
     addi(r1, SP, -node->child(1)->symbolTableEntry()->offset());
     sw(-node->parent()->symbolTableEntry()->offset(), SP, r1);
 
+    regPush(r2);
     regPush(r1);
 }
 
