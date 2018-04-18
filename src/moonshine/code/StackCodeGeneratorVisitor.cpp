@@ -357,6 +357,7 @@ void StackCodeGeneratorVisitor::visit(ast::assignStat* node)
 
     auto r1 = reg();
     auto r2 = reg();
+    auto r3 = reg();
 
     // load the indirected offset from the lhs tempvar
     lw(r1, -node->child(0)->symbolTableEntry()->offset(), SP);
@@ -365,13 +366,23 @@ void StackCodeGeneratorVisitor::visit(ast::assignStat* node)
     lw(r2, -node->child(1)->symbolTableEntry()->offset(), SP);
 
     if (dynamic_cast<ast::var*>(node->child(1))) {
-        // indirect, must fetch
-        lw(r2, 0, r2);
+        // indirect
+        auto type = dynamic_cast<semantic::VariableType*>(node->child(0)->rightmostChild()->symbolTableEntry()->type());
+        int size = node->child(0)->rightmostChild()->symbolTableEntry()->size();
+        for (const auto& i : type->indices) {
+            size /= i;
+        }
+
+        for (int i = 0; i < size; i += 4) {
+            lw(r3, i, r2);
+            sw(i, r1, r3);
+        }
+    } else {
+        // assign
+        sw(0, r1, r2);
     }
 
-    // assign
-    sw(0, r1, r2);
-
+    regPush(r3);
     regPush(r2);
     regPush(r1);
 }
@@ -456,21 +467,40 @@ void StackCodeGeneratorVisitor::visit(ast::returnStat* node)
     text() << "% returnStat: " << node->child()->symbolTableEntry()->name() << endl;
 
     auto r1 = reg();
+    auto r2 = reg();
 
     lw(r1, -node->child()->symbolTableEntry()->offset(), SP);
     if (dynamic_cast<ast::var*>(node->child())) {
         // indirect
-        lw(r1, 0, r1);
+        //lw(r1, 0, r1);
+        auto type = dynamic_cast<semantic::VariableType*>(node->child()->rightmostChild()->symbolTableEntry()->type());
+        int size = node->child()->rightmostChild()->symbolTableEntry()->size();
+        for (const auto& i : type->indices) {
+            size /= i;
+        }
+
+        for (int i = 0; i < size; i += 4) {
+            lw(r2, i, r1);
+            sw(-size + i, SP, r2);
+        }
+    } else {
+        sw(-node->child()->symbolTableEntry()->size(), SP, r1);
     }
 
-    sw(-4, SP, r1);
-
+    regPush(r2);
     regPush(r1);
 }
 
 void StackCodeGeneratorVisitor::visit(ast::funcDef* node)
 {
+    auto table = node->closestSymbolTable();
     auto function = node->symbolTableEntry();
+
+    if (!function) {
+        return;
+    }
+
+    auto type = dynamic_cast<semantic::FunctionType*>(function->type());
     bool isFreeFunction = !function->parentTable()->parentEntry();
     std::string prefix;
 
@@ -479,10 +509,19 @@ void StackCodeGeneratorVisitor::visit(ast::funcDef* node)
         prefix += function->parentTable()->parentEntry()->name();
     }
 
+    int returnSize = 0;
+
+    if (type->returnType.type == semantic::Type::CLASS) {
+        auto classEntry = (*table)[type->returnType.className];
+        returnSize = classEntry->size();
+    } else {
+        returnSize = 4;
+    }
+
     // create the tag to jump onto
     // and copy the jumping-back address value in the called function's stack frame
     text(prefix + function->name()) << "% funcDef: " << prefix << function->name() << endl;
-    sw(-8, SP, JL);
+    sw(-returnSize - 4, SP, JL);
 
     // generate the code for the function body
     text() << "%% function body begin" << endl;
@@ -490,7 +529,7 @@ void StackCodeGeneratorVisitor::visit(ast::funcDef* node)
     text() << "%% function body end" << endl;
 
     // copy back the jumping-back address into r15
-    lw(JL, -8, SP);
+    lw(JL, -returnSize - 4, SP);
 
     // jump back to the calling function
     jr(JL);
@@ -646,8 +685,10 @@ void StackCodeGeneratorVisitor::visit(ast::fCall* node)
 
     // copy the return value in memory space to store it on the current stack frame
     // to evaluate the expression in which it is
-    lw(r1, -table->size() - 4, SP);
-    sw(-node->child(1)->symbolTableEntry()->offset(), SP, r1);
+    for (int i = 0; i < node->child(1)->symbolTableEntry()->size(); i += 4) {
+        lw(r1, -table->size() - node->child(1)->symbolTableEntry()->size() + i, SP);
+        sw(-node->child(1)->symbolTableEntry()->offset() + i, SP, r1);
+    }
 
     // hack: for indirection to work, we set the var's offset to the address of our hidden tempvar
     addi(r1, SP, -node->child(1)->symbolTableEntry()->offset());

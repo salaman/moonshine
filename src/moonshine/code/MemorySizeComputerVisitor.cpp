@@ -166,26 +166,28 @@ void MemorySizeComputerVisitor::visit(ast::funcDef* node)
     Visitor::visit(node);
 
     auto table = node->symbolTable();
+    auto type = dynamic_cast<FunctionType*>(node->symbolTableEntry()->type());
 
     // stack frame contains the return value at the bottom of the stack
-    table->setSize(table->size() + getPrimitiveSize(dynamic_cast<FunctionType*>(node->symbolTableEntry()->type())->returnType.type));
+    int returnSize = 0;
+
+    if (type->returnType.type == Type::CLASS) {
+        auto classEntry = (*table)[type->returnType.className];
+        returnSize = classEntry->size();
+    } else {
+        returnSize = getPrimitiveSize(type->returnType.type);
+    }
+
+    table->setSize(table->size() + returnSize);
 
     // and the return address
-    table->setSize(table->size() + 4);
-
-    // if this is a member function, we need the object offset
-    if (!dynamic_cast<ast::nul*>(node->child(2))) {
-        table->setSize(table->size() + 4);
-    }
+    table->setSize(table->size() + getPrimitiveSize(Type::INT));
 
     for (auto entry = table->begin(); entry != table->end(); ++entry) {
         table->setSize(table->size() + entry->second->size());
         entry->second->setOffset(table->size());
     }
-
-    //node->symbolTableEntry()->setSize(table->size());
 }
-
 
 void MemorySizeComputerVisitor::visit(ast::forStat* node)
 {
@@ -258,16 +260,6 @@ void MemorySizeComputerVisitor::visit(ast::var* node)
 {
     Visitor::visit(node);
 
-    //node->symbolTableEntry() = node->child()->symbolTableEntry();
-
-    //node->symbolTableEntry() = std::make_shared<SymbolTableEntry>();
-    //node->symbolTableEntry()->setName(node->child()->symbolTableEntry()->name());
-    //node->symbolTableEntry()->setKind(node->child()->symbolTableEntry()->kind());
-    ////node->symbolTableEntry()->setType(std::unique_ptr<SymbolType>(new SymbolType(*node->child()->symbolTableEntry()->type())));
-    //node->symbolTableEntry()->setSize(getPrimitiveSize(node->type()->type));
-    //node->symbolTableEntry()->setOffset(node->child()->relativeOffset);
-    //table->addEntry(node->symbolTableEntry());
-
     if (node->symbolTableEntry()) {
         node->symbolTableEntry()->setSize(getPrimitiveSize(Type::INT));
     }
@@ -289,27 +281,27 @@ int MemorySizeComputerVisitor::getPrimitiveSize(const semantic::Type& type)
     }
 }
 
-void MemorySizeComputerVisitor::visit(ast::dataMember* node)
-{
-    Visitor::visit(node);
-}
-
-void MemorySizeComputerVisitor::visit(ast::fCall* node)
-{
-    Visitor::visit(node);
-
-    //if (node->symbolTableEntry()) {
-    //    node->symbolTableEntry()->setSize(getPrimitiveSize(node->type()->type));
-    //}
-}
-
 void MemorySizeComputerVisitor::visit(ast::aParams* node)
 {
     Visitor::visit(node);
 
-    if (node->symbolTableEntry()) {
-        node->symbolTableEntry()->setSize(getPrimitiveSize(dynamic_cast<VariableType*>(node->symbolTableEntry()->type())->type));
+    if (!node->symbolTableEntry()) {
+        return;
     }
+
+    auto table = node->closestSymbolTable();
+    auto type = dynamic_cast<VariableType*>(node->symbolTableEntry()->type());
+
+    int returnSize = 0;
+
+    if (type->type == Type::CLASS) {
+        auto classEntry = (*table)[type->className];
+        returnSize = classEntry->size();
+    } else {
+        returnSize = getPrimitiveSize(type->type);
+    }
+
+    node->symbolTableEntry()->setSize(returnSize);
 }
 
 }}
